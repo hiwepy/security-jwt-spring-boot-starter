@@ -20,9 +20,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.boot.biz.authentication.ajax.AjaxAwareAuthenticationFailureHandler;
 import org.springframework.security.boot.jwt.authentication.ajax.AjaxAwareAuthenticationSuccessHandler;
 import org.springframework.security.boot.jwt.authentication.ajax.AjaxUsernamePasswordAuthenticationFilter;
-import org.springframework.security.boot.jwt.authentication.jwt.JwtAuthenticationSuccessHandler;
 import org.springframework.security.boot.jwt.authentication.jwt.JwtTokenAuthenticationFilter;
 import org.springframework.security.boot.jwt.authentication.jwt.SkipPathRequestMatcher;
 import org.springframework.security.boot.jwt.authentication.jwt.extractor.TokenExtractor;
@@ -82,19 +82,31 @@ public class SecurityJwtWebFilterConfiguration implements ApplicationContextAwar
 	@ConditionalOnMissingBean
 	public AuthenticationSuccessHandler successHandler(ObjectMapper mapper) {
 		
-		SimpleUrlAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
-		successHandler.setDefaultTargetUrl(bizProperties.getSuccessUrl());
-		return successHandler;
+		// Ajax Login
+		if(bizProperties.isLoginAjax()) {
+			AjaxAwareAuthenticationSuccessHandler successHandler = new AjaxAwareAuthenticationSuccessHandler(mapper, jwtProperties);
+			return successHandler;
+		}
+		// Form Login
+		else {
+			SimpleUrlAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+			successHandler.setDefaultTargetUrl(bizProperties.getSuccessUrl());
+			return successHandler;
+		}
 		
-		
-		AjaxAwareAuthenticationSuccessHandler successHandler = new AjaxAwareAuthenticationSuccessHandler(mapper, jwtProperties);
-		return successHandler;
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
 	public AuthenticationFailureHandler failureHandler() {
-		return new SimpleUrlAuthenticationFailureHandler(bizProperties.getFailureUrl());
+		// Ajax Login
+		if(bizProperties.isLoginAjax()) {
+			return new AjaxAwareAuthenticationFailureHandler(bizProperties.getFailureUrl());
+		}
+		// Form Login
+		else {
+			return new SimpleUrlAuthenticationFailureHandler(bizProperties.getFailureUrl());
+		}
 	}
 
 	@Bean
@@ -127,9 +139,9 @@ public class SecurityJwtWebFilterConfiguration implements ApplicationContextAwar
 			AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource,
 			AuthenticationSuccessHandler successHandler, RememberMeServices rememberMeServices,
 			SessionAuthenticationStrategy sessionStrategy, ObjectMapper objectMapper) throws Exception {
-        AjaxUsernamePasswordAuthenticationFilter filter = new AjaxUsernamePasswordAuthenticationFilter(FORM_BASED_LOGIN_ENTRY_POINT, successHandler, failureHandler, objectMapper);
-        filter.setAuthenticationManager(authenticationManager);
-        return filter;
+        //AjaxUsernamePasswordAuthenticationFilter filter = new AjaxUsernamePasswordAuthenticationFilter(FORM_BASED_LOGIN_ENTRY_POINT, successHandler, failureHandler, objectMapper);
+        //filter.setAuthenticationManager(authenticationManager);
+        return null;
     }
     
     @Bean
