@@ -371,9 +371,10 @@
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
         <maven-surefire-plugin.vertsion>2.22.1</maven-surefire-plugin.vertsion>
 		<maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
-		<fastjson.version>1.2.46</fastjson.version>
-		<jjwt.version>0.7.0</jjwt.version>
-		<security-biz.version>1.0.0-SNAPSHOT</security-biz.version>
+		<fastjson.version>1.2.57</fastjson.version>
+		<jwt-issuer.version>1.0.2-SNAPSHOT</jwt-issuer.version>
+		<spring-boot-starter-security-biz.version>1.0.0-SNAPSHOT</spring-boot-starter-security-biz.version>
+		<spring-security-jwt.version>1.0.10.RELEASE</spring-security-jwt.version>
 	</properties>
 	
 	<dependencyManagement>
@@ -385,17 +386,41 @@
 				<artifactId>commons-io</artifactId>
 				<version>${commons-io.version}</version>
 			</dependency>
-			<dependency>
-			    <groupId>io.jsonwebtoken</groupId>
-			    <artifactId>jjwt</artifactId>
-			    <version>${jjwt.version}</version>
-			</dependency>
 			
+			<!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
+			<dependency>
+			    <groupId>com.alibaba</groupId>
+			    <artifactId>fastjson</artifactId>
+			    <version>${fastjson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.vindell</groupId>
+				<artifactId>jwt-issuer-api</artifactId>
+				<version>${jwt-issuer.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.vindell</groupId>
+				<artifactId>jwt-issuer-with-jjwt</artifactId>
+				<version>${jwt-issuer.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.github.vindell</groupId>
+				<artifactId>jwt-issuer-with-nimbus</artifactId>
+				<version>${jwt-issuer.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<!-- https://github.com/vindell/spring-boot-starter-security-biz -->
+			<dependency>
+				<groupId>com.github.vindell</groupId>
+				<artifactId>spring-boot-starter-security-biz</artifactId>
+				<version>${spring-boot-starter-security-biz.version}</version>
+			</dependency>
 			<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-jwt -->
 			<dependency>
 			    <groupId>org.springframework.security</groupId>
 			    <artifactId>spring-security-jwt</artifactId>
-			    <version>1.0.9.RELEASE</version>
+			    <version>${spring-security-jwt.version}</version>
 			</dependency>
 			
 		</dependencies>
@@ -452,15 +477,6 @@
 		</dependency>
 		
 		<dependency>
-		    <groupId>io.jsonwebtoken</groupId>
-		    <artifactId>jjwt</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.nimbusds</groupId>
-	    	<artifactId>nimbus-jose-jwt</artifactId>
-	    	<version>5.4</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
@@ -469,18 +485,29 @@
   			<artifactId>jackson-databind</artifactId>
 		</dependency>
 		
-	 	<!-- http://mvnrepository.com/artifact/com.alibaba/fastjson -->
+		<!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
 		<dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>fastjson</artifactId>
-			<version>${fastjson.version}</version>
+		    <groupId>com.alibaba</groupId>
+		    <artifactId>fastjson</artifactId>
 		</dependency>
-		
+		<dependency>
+			<groupId>com.github.vindell</groupId>
+			<artifactId>jwt-issuer-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.vindell</groupId>
+			<artifactId>jwt-issuer-with-jjwt</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.vindell</groupId>
+			<artifactId>jwt-issuer-with-nimbus</artifactId>
+			<scope>provided</scope>
+		</dependency>
 		<!-- https://github.com/vindell/spring-boot-starter-security-biz -->
 		<dependency>
 			<groupId>com.github.vindell</groupId>
 			<artifactId>spring-boot-starter-security-biz</artifactId>
-			<version>${security-biz.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>

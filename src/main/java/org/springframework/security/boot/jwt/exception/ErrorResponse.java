@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
  * Aug 3, 2016
  */
 public class ErrorResponse {
+	
     // HTTP Response Status Code
     private final HttpStatus status;
 
@@ -19,19 +20,19 @@ public class ErrorResponse {
     private final String message;
 
     // Error code
-    private final ErrorCode errorCode;
+    private final ErrorCode code;
 
     private final Date timestamp;
 
-    protected ErrorResponse(final String message, final ErrorCode errorCode, HttpStatus status) {
+    protected ErrorResponse(final String message, final ErrorCode code, HttpStatus status) {
         this.message = message;
-        this.errorCode = errorCode;
+        this.code = code;
         this.status = status;
         this.timestamp = new java.util.Date();
     }
 
-    public static ErrorResponse of(final String message, final ErrorCode errorCode, HttpStatus status) {
-        return new ErrorResponse(message, errorCode, status);
+    public static ErrorResponse of(final String message, final ErrorCode code, HttpStatus status) {
+        return new ErrorResponse(message, code, status);
     }
 
     public Integer getStatus() {
@@ -42,8 +43,8 @@ public class ErrorResponse {
         return message;
     }
 
-    public ErrorCode getErrorCode() {
-        return errorCode;
+    public ErrorCode getCode() {
+        return code;
     }
 
     public Date getTimestamp() {

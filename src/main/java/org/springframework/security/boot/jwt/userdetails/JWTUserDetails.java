@@ -21,12 +21,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 /**
- * 
- * @className	： JWTUserDetails
- * @description	： JWT保存的用户信息
- * @author 		： <a href="https://github.com/vindell">vindell</a>
- * @date		： 2017年9月13日 下午7:22:30
- * @version 	V1.0
+ * JWT保存的用户信息
+ * @author 		： <a href="https://github.com/vindell">wandl</a>
  */
 @SuppressWarnings("serial")
 public class JWTUserDetails extends User {
