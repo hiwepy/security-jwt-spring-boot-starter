@@ -1,7 +1,6 @@
 package org.springframework.security.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.security.boot.jwt.token.JwtToken;
 
 @ConfigurationProperties(prefix = SecurityJwtProperties.PREFIX)
 public class SecurityJwtProperties {

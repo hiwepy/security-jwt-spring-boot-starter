@@ -17,7 +17,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     private final BaseAuthenticationUserDetailsService userDetailsService;
     
     public JwtAuthenticationProvider(final BaseAuthenticationUserDetailsService userDetailsService, final PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
+        this.userDetailsService =userDetailsService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -25,17 +25,17 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         
     	Assert.notNull(authentication, "No authentication data provided");
-        String mobile = (String) authentication.getPrincipal();
-        String code = (String) authentication.getCredentials();
+        String username = (String) authentication.getPrincipal();
+        String password = (String) authentication.getCredentials();
         
         UserDetails user = null;
 		try {
 			user = userDetailsService.loadUserDetails(authentication);
 		} catch (UsernameNotFoundException e) {
-			throw new UsernameNotFoundException("User not registered: " + mobile, e);
+			throw new UsernameNotFoundException("User not found: " + username, e);
 		}
-        if (!passwordEncoder.matches(code, user.getPassword())) {
-            throw new BadCredentialsException("Authentication Failed. Code not valid.");
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
         }
         
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword(), user.getAuthorities());
@@ -45,6 +45,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return (UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication));
+        return (JwtAuthenticationToken.class.isAssignableFrom(authentication));
     }
+    
 }

@@ -416,12 +416,6 @@
 				<artifactId>spring-boot-starter-security-biz</artifactId>
 				<version>${spring-boot-starter-security-biz.version}</version>
 			</dependency>
-			<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-jwt -->
-			<dependency>
-			    <groupId>org.springframework.security</groupId>
-			    <artifactId>spring-security-jwt</artifactId>
-			    <version>${spring-security-jwt.version}</version>
-			</dependency>
 			
 		</dependencies>
 	</dependencyManagement>
@@ -508,10 +502,6 @@
 		<dependency>
 			<groupId>com.github.vindell</groupId>
 			<artifactId>spring-boot-starter-security-biz</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-jwt</artifactId>
 		</dependency>
 		
 	</dependencies>

@@ -8,11 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -23,11 +20,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.filter.CustomCorsFilter;
-import org.springframework.security.boot.jwt.authentication.JwtRequestAuthenticationFailureHandler;
+import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
+import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
 import org.springframework.security.boot.jwt.authentication.JwtRequestAuthenticationProvider;
-import org.springframework.security.boot.jwt.authentication.JwtRequestAuthenticationSuccessHandler;
-import org.springframework.security.boot.jwt.authentication.JwtUsernamePasswordAuthenticationFilter;
-import org.springframework.security.boot.jwt.authentication.jwt.JwtAuthenticationProvider;
 import org.springframework.security.boot.jwt.authentication.jwt.JwtTokenAuthenticationFilter;
 import org.springframework.security.boot.jwt.authentication.jwt.SkipPathRequestMatcher;
 import org.springframework.security.boot.jwt.authentication.jwt.extractor.TokenExtractor;
@@ -46,11 +41,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.NullRememberMeServices;
 import org.springframework.security.web.authentication.RememberMeServices;
-import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
@@ -75,49 +66,7 @@ public class SecurityJwtWebFilterConfiguration extends WebSecurityConfigurerAdap
 	@Autowired
 	private ServerProperties serverProperties;
 
-
-	@Bean
-	protected BCryptPasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource() {
-		return new WebAuthenticationDetailsSource();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public AuthenticationSuccessHandler successHandler(ObjectMapper mapper) {
-		
-		// Ajax Login
-		if(bizProperties.isLoginAjax()) {
-			JwtRequestAuthenticationSuccessHandler successHandler = new JwtRequestAuthenticationSuccessHandler(mapper, jwtProperties);
-			return successHandler;
-		}
-		// Form Login
-		else {
-			SimpleUrlAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
-			successHandler.setDefaultTargetUrl(bizProperties.getSuccessUrl());
-			return successHandler;
-		}
-		
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public AuthenticationFailureHandler failureHandler() {
-		// Ajax Login
-		if(bizProperties.isLoginAjax()) {
-			return new JwtRequestAuthenticationFailureHandler(bizProperties.getFailureUrl());
-		}
-		// Form Login
-		else {
-			return new SimpleUrlAuthenticationFailureHandler(bizProperties.getFailureUrl());
-		}
-	}
-
+ 
 	@Bean
 	@ConditionalOnMissingBean
 	public SessionAuthenticationStrategy sessionStrategy() {
@@ -129,12 +78,7 @@ public class SecurityJwtWebFilterConfiguration extends WebSecurityConfigurerAdap
 	public RememberMeServices rememberMeServices() {
 		return new NullRememberMeServices();
 	}
-
-	public static final String JWT_TOKEN_HEADER_PARAM = "X-Authorization";
-    public static final String FORM_BASED_LOGIN_ENTRY_POINT = "/api/auth/login";
-    public static final String TOKEN_BASED_AUTH_ENTRY_POINT = "/api/**";
-    public static final String TOKEN_REFRESH_ENTRY_POINT = "/api/auth/token";
-    
+ 
     @Bean
 	@ConditionalOnMissingBean
 	public ObjectMapper objectMapper() {
@@ -143,7 +87,7 @@ public class SecurityJwtWebFilterConfiguration extends WebSecurityConfigurerAdap
     
     @Bean
 	@ConditionalOnMissingBean
-	public JwtUsernamePasswordAuthenticationFilter jwtAjaxLoginProcessingFilter(AuthenticationFailureHandler failureHandler,
+	public JwtAuthenticationProcessingFilter jwtAjaxLoginProcessingFilter(AuthenticationFailureHandler failureHandler,
 			AuthenticationManager authenticationManager, ApplicationEventPublisher publisher,
 			AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource,
 			AuthenticationSuccessHandler successHandler, RememberMeServices rememberMeServices,
@@ -283,7 +227,7 @@ public class SecurityJwtWebFilterConfiguration extends WebSecurityConfigurerAdap
     private ObjectMapper objectMapper;
     
     @Autowired 
-    private JwtUsernamePasswordAuthenticationFilter jwtAjaxLoginProcessingFilter;
+    private JwtAuthenticationProcessingFilter jwtAjaxLoginProcessingFilter;
     @Autowired 
     private JwtTokenAuthenticationFilter jwtTokenAuthenticationProcessingFilter;
     
