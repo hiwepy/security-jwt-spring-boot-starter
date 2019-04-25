@@ -1,21 +1,7 @@
-/*
- * Copyright (c) 2018, vindell (https://github.com/vindell).
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
 package org.springframework.security.boot.jwt.authentication;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -24,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.exception.AuthMethodNotSupportedException;
 import org.springframework.security.boot.biz.exception.AuthenticationCaptchaIncorrectException;
 import org.springframework.security.boot.biz.exception.AuthenticationCaptchaNotFoundException;
@@ -35,19 +22,35 @@ import org.springframework.security.boot.jwt.exception.JwtExpiredException;
 import org.springframework.security.boot.jwt.exception.JwtIncorrectException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.ExceptionMappingAuthenticationFailureHandler;
 
 import com.alibaba.fastjson.JSONObject;
 
 /**
- * Jwt认证 (authentication)处理端点
- * @author 		： <a href="https://github.com/vindell">wandl</a>
+ * Jwt认证、授权 (authorization) 失败处理器
+ * @author ： <a href="https://github.com/vindell">vindell</a>
  */
-public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class JwtAuthcOrAuthzFailureHandler extends ExceptionMappingAuthenticationFailureHandler {
 
-	public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
-			throws IOException, ServletException {
+	private List<AuthenticationListener> authenticationListeners;
+	
+	public JwtAuthcOrAuthzFailureHandler(List<AuthenticationListener> authenticationListeners) {
+		this.setAuthenticationListeners(authenticationListeners);
+	}
+	
+	@Override
+	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException e) throws IOException, ServletException {
+		
+		//调用事件监听器
+		if(getAuthenticationListeners() != null && getAuthenticationListeners().size() > 0){
+			for (AuthenticationListener authenticationListener : getAuthenticationListeners()) {
+				authenticationListener.onFailure(request, response, e);
+			}
+		}
+		
 		writeJSONString(request, response, e);
+		
 	}
 	
 	protected void writeJSONString(HttpServletRequest request, HttpServletResponse response,
@@ -78,5 +81,14 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of("Authentication failed", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
 		}
 	}
+	
 
+	public List<AuthenticationListener> getAuthenticationListeners() {
+		return authenticationListeners;
+	}
+
+	public void setAuthenticationListeners(List<AuthenticationListener> authenticationListeners) {
+		this.authenticationListeners = authenticationListeners;
+	}
+	
 }

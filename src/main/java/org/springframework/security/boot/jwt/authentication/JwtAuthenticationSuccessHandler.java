@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
+import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.WebAttributes;
@@ -21,14 +22,16 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import com.alibaba.fastjson.JSONObject;
 
 /**
- * TODO
+ * Jwt认证 (authentication)成功回调器：讲认证信息写回前端
  * @author 		： <a href="https://github.com/vindell">vindell</a>
  */
 public class JwtAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
    
 	private List<AuthenticationListener> authenticationListeners;
+	private JwtPayloadRepository payloadRepository;
 	
-	public JwtAuthenticationSuccessHandler(List<AuthenticationListener> authenticationListeners, String defaultTargetUrl) {
+	public JwtAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository, List<AuthenticationListener> authenticationListeners) {
+		this.setPayloadRepository(payloadRepository);
 		this.setAuthenticationListeners(authenticationListeners);
 	}
 
@@ -48,7 +51,7 @@ public class JwtAuthenticationSuccessHandler implements AuthenticationSuccessHan
 		Map<String, Object> tokenMap = new HashMap<String, Object>();
 		tokenMap.put("perms", userDetails.getAuthorities());
 		tokenMap.put("status", "1");
-		//tokenMap.put("token", getDefaultTargetUrl());
+		tokenMap.put("token", getPayloadRepository().issueJwt((JwtAuthenticationToken) authentication));
 		tokenMap.put("username", userDetails.getUsername());
 
 		response.setStatus(HttpStatus.OK.value());
@@ -75,6 +78,13 @@ public class JwtAuthenticationSuccessHandler implements AuthenticationSuccessHan
         session.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
     }
     
+	public JwtPayloadRepository getPayloadRepository() {
+		return payloadRepository;
+	}
+
+	public void setPayloadRepository(JwtPayloadRepository payloadRepository) {
+		this.payloadRepository = payloadRepository;
+	}
 
 	public List<AuthenticationListener> getAuthenticationListeners() {
 		return authenticationListeners;

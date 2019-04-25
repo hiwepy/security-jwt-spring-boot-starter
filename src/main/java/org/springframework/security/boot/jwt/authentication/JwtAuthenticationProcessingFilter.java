@@ -2,6 +2,7 @@ package org.springframework.security.boot.jwt.authentication;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -12,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JwtAuthenticationProcessingFilter extends PostRequestAuthenticationProcessingFilter {
 
 	public JwtAuthenticationProcessingFilter(ObjectMapper objectMapper) {
-		super(objectMapper);
+		super(objectMapper, new AntPathRequestMatcher("/login/jwt", "POST"));
 	}
 	
 	@Override

@@ -15,12 +15,9 @@
  */
 package org.springframework.security.boot.jwt.userdetails;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
+import org.springframework.security.boot.jwt.authentication.JwtAuthenticationToken;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
 
 import com.github.vindell.jwt.JwtPayload;
 
@@ -30,11 +27,9 @@ import com.github.vindell.jwt.JwtPayload;
  */
 public abstract class JwtPayloadRepository {
 
-	public abstract String issueJwt(JwtAuthorizationToken token, SecurityContext context, ServletRequest request,
-			ServletResponse response);
+	public abstract String issueJwt(JwtAuthenticationToken token);
 
-	public abstract boolean verify(JwtAuthorizationToken token, SecurityContext context, ServletRequest request,
-			ServletResponse response, boolean checkExpiry) throws AuthenticationException;
+	public abstract boolean verify(JwtAuthorizationToken token, boolean checkExpiry) throws AuthenticationException;
 
 	public abstract JwtPayload getPayload(JwtAuthorizationToken token, boolean checkExpiry);
 

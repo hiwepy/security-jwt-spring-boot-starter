@@ -50,7 +50,7 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
 
 	public JwtAuthorizationProcessingFilter() {
-		super(new AntPathRequestMatcher("/api/**"));
+		super(new AntPathRequestMatcher("/**"));
 	}
 
 	@Override
@@ -129,6 +129,19 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 
 	public void setAuthorizationCookieName(String authorizationCookieName) {
 		this.authorizationCookieName = authorizationCookieName;
+	}
+
+	/**
+	 * Sets the URL that determines if authentication is required
+	 * @param filterProcessesUrl
+	 */
+	public void setLoginFilterProcessesUrl(String filterProcessesUrl) {
+		setLoginAuthenticationRequestMatcher(new AntPathRequestMatcher(
+				filterProcessesUrl));
+	}
+
+	public void setLoginAuthenticationRequestMatcher(RequestMatcher loginAuthenticationRequestMatcher) {
+		this.loginAuthenticationRequestMatcher = loginAuthenticationRequestMatcher;
 	}
 
 }

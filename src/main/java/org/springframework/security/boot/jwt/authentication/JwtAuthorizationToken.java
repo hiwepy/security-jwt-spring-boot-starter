@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * Jwt授权 (authorization) Token
@@ -13,19 +12,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 @SuppressWarnings("serial")
 public class JwtAuthorizationToken extends AbstractAuthenticationToken {
 
-    private String token;
-    private UserDetails userDetails;
-
-    public JwtAuthorizationToken(String token) {
+	private final Object principal;
+	private Object credentials;
+    
+    public JwtAuthorizationToken( Object principal) {
         super(null);
-        this.token = token;
+        this.principal = principal;
         this.setAuthenticated(false);
     }
 
-    public JwtAuthorizationToken(UserDetails userDetails, Collection<? extends GrantedAuthority> authorities) {
+    public JwtAuthorizationToken( Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.eraseCredentials();
-        this.userDetails = userDetails;
+        this.principal = principal;
+        this.credentials = credentials;
         super.setAuthenticated(true);
     }
 
@@ -40,18 +40,18 @@ public class JwtAuthorizationToken extends AbstractAuthenticationToken {
 
     @Override
     public Object getCredentials() {
-        return token;
+        return credentials;
     }
 
     @Override
     public Object getPrincipal() {
-        return this.userDetails;
+        return this.principal;
     }
-
+    
     @Override
     public void eraseCredentials() {        
         super.eraseCredentials();
-        this.token = null;
+        this.credentials = null;
     }
     
 }

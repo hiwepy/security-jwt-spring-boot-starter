@@ -8,30 +8,28 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.boot.biz.userdetails.BaseAuthenticationUserDetailsService;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
+import org.springframework.security.boot.jwt.userdetails.JwtUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.SpringSecurityMessageSource;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Jwt认证 (authentication)处理器
+ * 
+ * Jwt授权 (authorization)处理器
  * @author 		： <a href="https://github.com/vindell">wandl</a>
  */
-public class JwtAuthenticationProvider implements AuthenticationProvider {
+public class JwtAuthorizationProvider implements AuthenticationProvider {
 	
 	protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final PasswordEncoder passwordEncoder;
     private final BaseAuthenticationUserDetailsService userDetailsService;
     private UserDetailsChecker userDetailsChecker = new AccountStatusUserDetailsChecker();
     
-    public JwtAuthenticationProvider(final BaseAuthenticationUserDetailsService userDetailsService, final PasswordEncoder passwordEncoder) {
-        this.userDetailsService =userDetailsService;
-        this.passwordEncoder = passwordEncoder;
+    public JwtAuthorizationProvider(final BaseAuthenticationUserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
     }
 
     /**
@@ -51,32 +49,23 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 			logger.debug("Processing authentication request : " + authentication);
 		}
  
-        String username = (String) authentication.getPrincipal();
-        String password = (String) authentication.getCredentials();
+        String token = (String) authentication.getPrincipal();
         
-		if (!StringUtils.hasLength(username)) {
+		if (!StringUtils.hasLength(token)) {
 			logger.debug("No principal found in request.");
 			throw new BadCredentialsException("No principal found in request.");
 		}
-
-		if (!StringUtils.hasLength(password)) {
-			logger.debug("No credentials found in request.");
-			throw new BadCredentialsException("No credentials found in request.");
-		}
         
-        UserDetails ud = userDetailsService.loadUserDetails(authentication);
-        if (!passwordEncoder.matches(password, ud.getPassword())) {
-            throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
-        }
+		JwtUserDetails ud = (JwtUserDetails) userDetailsService.loadUserDetails(authentication);
         
         // User Status Check
         getUserDetailsChecker().check(ud);
         
-        JwtAuthenticationToken authenticationToken = null;
+        JwtAuthorizationToken authenticationToken = null;
         if(SecurityPrincipal.class.isAssignableFrom(ud.getClass())) {
-        	authenticationToken = new JwtAuthenticationToken(ud, ud.getPassword(), ud.getAuthorities());        	
+        	authenticationToken = new JwtAuthorizationToken(ud, ud.getPayload(), ud.getAuthorities());        	
         } else {
-        	authenticationToken = new JwtAuthenticationToken(ud.getUsername(), ud.getPassword(), ud.getAuthorities());
+        	authenticationToken = new JwtAuthorizationToken(ud.getUsername(), ud.getPayload(), ud.getAuthorities());
 		}
         authenticationToken.setDetails(authentication.getDetails());
         
@@ -94,14 +83,6 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
 	public UserDetailsChecker getUserDetailsChecker() {
 		return userDetailsChecker;
-	}
-
-	public PasswordEncoder getPasswordEncoder() {
-		return passwordEncoder;
-	}
-
-	public BaseAuthenticationUserDetailsService getUserDetailsService() {
-		return userDetailsService;
 	}
     
 }
