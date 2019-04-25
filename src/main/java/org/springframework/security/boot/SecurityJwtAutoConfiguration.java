@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.userdetails.BaseAuthenticationUserDetailsService;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEntryPoint;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
+import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEntryPoint;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
@@ -28,7 +28,7 @@ import org.springframework.security.web.authentication.RememberMeServices;
 public class SecurityJwtAutoConfiguration{
 
 	@Autowired
-	private SecurityBizProperties bizProperties;
+	private SecurityJwtProperties jwtProperties;
 	
 	@Bean
 	public RememberMeServices rememberMeServices() {
@@ -74,9 +74,9 @@ public class SecurityJwtAutoConfiguration{
 			RedirectStrategy redirectStrategy) {
 		JwtAuthcOrAuthzFailureHandler failureHandler = new JwtAuthcOrAuthzFailureHandler(
 				authenticationListeners);
-		failureHandler.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
+		failureHandler.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
 		failureHandler.setRedirectStrategy(redirectStrategy);
-		failureHandler.setUseForward(bizProperties.getAuthc().isUseForward());
+		failureHandler.setUseForward(jwtProperties.getAuthc().isUseForward());
 		return failureHandler;
 	}
 

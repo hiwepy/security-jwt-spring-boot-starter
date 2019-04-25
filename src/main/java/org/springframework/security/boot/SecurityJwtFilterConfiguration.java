@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -42,16 +41,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 @AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
 @ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class, ServerProperties.class })
-@Order(104)
+@EnableConfigurationProperties({ SecurityJwtProperties.class })
+@Order(103)
 public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
 
 	private ApplicationEventPublisher eventPublisher;
-
+	
 	@Autowired
 	private SecurityJwtProperties jwtProperties;
-	@Autowired
-	private SecurityBizProperties bizProperties;
 	@Autowired
 	private AuthenticatingFailureCounter authenticatingFailureCounter;
 	@Autowired
@@ -80,17 +77,17 @@ public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter
     	
         JwtAuthenticationProcessingFilter authcFilter = new JwtAuthenticationProcessingFilter(objectMapper);
         
-        authcFilter.setCaptchaParameter(bizProperties.getCaptcha().getParamName());
+        authcFilter.setCaptchaParameter(jwtProperties.getCaptcha().getParamName());
 		// 是否验证码必填
-		authcFilter.setCaptchaRequired(bizProperties.getCaptcha().isRequired());
+		authcFilter.setCaptchaRequired(jwtProperties.getCaptcha().isRequired());
 		// 登陆失败重试次数，超出限制需要输入验证码
-		authcFilter.setRetryTimesWhenAccessDenied(bizProperties.getCaptcha().getRetryTimesWhenAccessDenied());
+		authcFilter.setRetryTimesWhenAccessDenied(jwtProperties.getCaptcha().getRetryTimesWhenAccessDenied());
 		// 验证码解析器
 		authcFilter.setCaptchaResolver(captchaResolver);
 		// 认证失败计数器
 		authcFilter.setFailureCounter(authenticatingFailureCounter);
 
-		authcFilter.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
+		authcFilter.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
 		authcFilter.setApplicationEventPublisher(eventPublisher);
 		authcFilter.setAuthenticationFailureHandler(failureHandler);
 		authcFilter.setAuthenticationManager(authenticationManager);

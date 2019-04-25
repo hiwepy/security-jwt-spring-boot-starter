@@ -44,6 +44,7 @@ public class SecurityJwtAuthcProperties {
 	private String retryTimesKeyAttribute = PostRequestAuthenticationProcessingFilter.DEFAULT_RETRY_TIMES_KEY_ATTRIBUTE_NAME;
 	/** Maximum number of retry to login . */
 	private int retryTimesWhenAccessDenied = 3;
+	private boolean useForward = false;
 	
 	public String getLoginUrlPattern() {
 		return loginUrlPattern;
@@ -108,6 +109,14 @@ public class SecurityJwtAuthcProperties {
 
 	public void setRetryTimesWhenAccessDenied(int retryTimesWhenAccessDenied) {
 		this.retryTimesWhenAccessDenied = retryTimesWhenAccessDenied;
+	}
+	
+	public boolean isUseForward() {
+		return useForward;
+	}
+
+	public void setUseForward(boolean useForward) {
+		this.useForward = useForward;
 	}
 
 }
