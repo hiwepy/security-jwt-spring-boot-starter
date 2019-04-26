@@ -52,7 +52,6 @@ public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 	private String retryTimesKeyAttribute = PostRequestAuthenticationProcessingFilter.DEFAULT_RETRY_TIMES_KEY_ATTRIBUTE_NAME;
 	/** Maximum number of retry to login . */
 	private int retryTimesWhenAccessDenied = 3;
-	private boolean useForward = false;
 	
 	public boolean isEnabled() {
 		return enabled;

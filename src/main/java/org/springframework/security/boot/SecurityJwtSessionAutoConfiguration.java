@@ -5,29 +5,25 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
+import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.property.SessionFixationPolicy;
-import org.springframework.security.boot.biz.userdetails.BaseAuthenticationUserDetailsService;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEntryPoint;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationToken;
-import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
-import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
-import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
@@ -43,15 +39,16 @@ import org.springframework.security.web.session.SessionInformationExpiredStrateg
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
-import com.github.vindell.jwt.JwtPayload;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 @AutoConfigureBefore(SecurityBizAutoConfiguration.class)
-@EnableConfigurationProperties({ SecurityJwtProperties.class })
-public class SecurityJwtAutoConfiguration{
+@ConditionalOnProperty(prefix = SecurityJwtSessionProperties.PREFIX, value = "enabled", havingValue = "true")
+@EnableConfigurationProperties({ SecurityJwtSessionProperties.class })
+public class SecurityJwtSessionAutoConfiguration extends WebSecurityConfigurerAdapter{
 
 	@Autowired
-	private SecurityJwtProperties jwtProperties;
+	private SecurityJwtSessionProperties jwtProperties;
 	
 	@Bean("jwtRedirectStrategy")
 	public RedirectStrategy jwtRedirectStrategy() {
@@ -73,14 +70,14 @@ public class SecurityJwtAutoConfiguration{
 	@Bean("jwtInvalidSessionStrategy")
 	public InvalidSessionStrategy jwtInvalidSessionStrategy() {
 		SimpleRedirectInvalidSessionStrategy invalidSessionStrategy = new SimpleRedirectInvalidSessionStrategy(
-				jwtProperties.getAuthc().getRedirectUrl());
+				jwtProperties.getInvalidSessionUrl());
 		invalidSessionStrategy.setCreateNewSession(jwtProperties.getSessionMgt().isAllowSessionCreation());
 		return invalidSessionStrategy;
 	}
 
 	@Bean("jwtExpiredSessionStrategy")
-	public SessionInformationExpiredStrategy jwtExpiredSessionStrategy(RedirectStrategy redirectStrategy) {
-		return new SimpleRedirectSessionInformationExpiredStrategy(jwtProperties.getAuthc().getRedirectUrl(), redirectStrategy);
+	public SessionInformationExpiredStrategy jwtExpiredSessionStrategy() {
+		return new SimpleRedirectSessionInformationExpiredStrategy(jwtProperties.getInvalidSessionUrl(), jwtRedirectStrategy());
 	}
 	
 	@Bean("jwtCsrfTokenRepository")
@@ -120,18 +117,16 @@ public class SecurityJwtAutoConfiguration{
 		return logoutHandler;
 	}
 	
-	@Bean("jwtAuthenticatingFailureCounter")
-	public AuthenticatingFailureCounter jwtAuthenticatingFailureCounter() {
-		AuthenticatingFailureRequestCounter  failureCounter = new AuthenticatingFailureRequestCounter();
-		failureCounter.setRetryTimesKeyParameter(jwtProperties.getAuthc().getRetryTimesKeyParameter());
-		return failureCounter;
+	@Bean
+	public JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler() {
+		JwtAuthcOrAuthzFailureHandler failureHandler = new JwtAuthcOrAuthzFailureHandler(
+				authenticationListeners);
+		failureHandler.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
+		failureHandler.setRedirectStrategy(jwtRedirectStrategy());
+		failureHandler.setUseForward(jwtProperties.isUseForward());
+		return failureHandler;
 	}
 	
-	/*
-	 *################################################################### 
-	 *# Jwt认证 (authentication) 配置
-	 *###################################################################
-	 */
 
 	@Bean
 	public JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint() {
@@ -140,63 +135,81 @@ public class SecurityJwtAutoConfiguration{
 		
 		return entryPoint;
 	}
-	
-	@Bean
-	public JwtAuthenticationProvider jwtAuthenticationProvider(BaseAuthenticationUserDetailsService userDetailsService,
-			PasswordEncoder passwordEncoder) {
-		return new JwtAuthenticationProvider(userDetailsService, passwordEncoder);
-	}
-	
-	@Bean
-	@ConditionalOnMissingBean
-	public JwtPayloadRepository payloadRepository() {
-		return new JwtPayloadRepository() {
 
-			@Override
-			public String issueJwt(JwtAuthenticationToken token) {
-				return null;
-			}
-
-			@Override
-			public boolean verify(JwtAuthorizationToken token, boolean checkExpiry) throws AuthenticationException {
-				return false;
-			}
-
-			@Override
-			public JwtPayload getPayload(JwtAuthorizationToken token, boolean checkExpiry) {
-				return null;
-			}
-			
-		};
-	}
+	@Autowired
+	private AuthenticationManager authenticationManager;
+	@Autowired
+	private ObjectMapper objectMapper;
+	@Autowired
+	private RememberMeServices rememberMeServices;
+	@Autowired
+    private SessionRegistry sessionRegistry;
+	@Autowired
+	private UserDetailsService userDetailsService;
+	@Autowired(required = false) 
+	private List<AuthenticationListener> authenticationListeners;
 	
-	@Bean
-	public JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository, 
-			@Autowired(required = false) List<AuthenticationListener> authenticationListeners) {
-		return new JwtAuthenticationSuccessHandler(payloadRepository, authenticationListeners);
-	}
-	
-	
-	/*
-	 *################################################################### 
-	 *# Jwt授权 (authorization)配置
-	 *###################################################################
-	 */
-	@Bean
-	public JwtAuthcOrAuthzFailureHandler jwtAuthorizationFailureHandler(
-			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
-			@Qualifier("jwtRedirectStrategy") RedirectStrategy redirectStrategy) {
-		JwtAuthcOrAuthzFailureHandler failureHandler = new JwtAuthcOrAuthzFailureHandler(
-				authenticationListeners);
-		failureHandler.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
-		failureHandler.setRedirectStrategy(redirectStrategy);
-		failureHandler.setUseForward(jwtProperties.getAuthc().isUseForward());
-		return failureHandler;
-	}
-
-	@Bean
-	public JwtAuthorizationProvider jwtAuthorizationProvider(BaseAuthenticationUserDetailsService userDetailsService) {
-		return new JwtAuthorizationProvider(userDetailsService);
-	}
+	@Autowired
+	@Qualifier("jwtAuthenticatingFailureCounter")
+	private AuthenticatingFailureCounter jwtAuthenticatingFailureCounter;
+	@Autowired
+	@Qualifier("jwtSessionAuthenticationStrategy")
+	private SessionAuthenticationStrategy jwtSessionAuthenticationStrategy;
+    @Autowired
+    @Qualifier("jwtCsrfTokenRepository")
+	private CsrfTokenRepository jwtCsrfTokenRepository;
+    @Autowired
+    @Qualifier("jwtExpiredSessionStrategy")
+    private SessionInformationExpiredStrategy jwtExpiredSessionStrategy;
+    @Autowired
+    @Qualifier("jwtRequestCache")
+    private RequestCache jwtRequestCache;
+    @Autowired
+    @Qualifier("jwtInvalidSessionStrategy")
+    private InvalidSessionStrategy jwtInvalidSessionStrategy;
+    @Autowired
+    @Qualifier("jwtSecurityContextLogoutHandler") 
+    private SecurityContextLogoutHandler jwtSecurityContextLogoutHandler;
+    @Autowired
+    private JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler;
+    
+	@Override
+    protected void configure(HttpSecurity http) throws Exception {
+    	
+    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
+    	
+    	// Session 管理器配置参数
+    	SecuritySessionMgtProperties sessionMgt = jwtProperties.getSessionMgt();
+    	// Session 注销配置参数
+    	SecurityLogoutProperties logout = jwtProperties.getLogout();
+    	
+	    // Session 管理器配置
+    	http.sessionManagement()
+    		.enableSessionUrlRewriting(sessionMgt.isEnableSessionUrlRewriting())
+    		.invalidSessionStrategy(jwtInvalidSessionStrategy)
+    		.invalidSessionUrl(jwtProperties.getLogout().getLogoutUrl())
+    		.maximumSessions(sessionMgt.getMaximumSessions())
+    		.maxSessionsPreventsLogin(sessionMgt.isMaxSessionsPreventsLogin())
+    		.expiredSessionStrategy(jwtExpiredSessionStrategy)
+			.expiredUrl(jwtProperties.getLogout().getLogoutUrl())
+			.sessionRegistry(sessionRegistry)
+			.and()
+    		.sessionAuthenticationErrorUrl(sessionMgt.getFailureUrl())
+    		.sessionAuthenticationFailureHandler(jwtAuthcOrAuthzFailureHandler)
+    		.sessionAuthenticationStrategy(jwtSessionAuthenticationStrategy)
+    		.sessionCreationPolicy(sessionMgt.getCreationPolicy())
+    		// Session 注销配置
+    		.and()
+    		.logout()
+    		.addLogoutHandler(jwtSecurityContextLogoutHandler)
+    		.clearAuthentication(logout.isClearAuthentication())
+        	// Request 缓存配置
+        	.and()
+    		.requestCache()
+        	.requestCache(jwtRequestCache);
+        
+        http.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint());
+        
+    }
 
 }

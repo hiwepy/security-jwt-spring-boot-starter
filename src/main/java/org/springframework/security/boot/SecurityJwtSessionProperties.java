@@ -9,8 +9,8 @@ import org.springframework.security.boot.biz.property.SecuritySessionMgtProperti
 import org.springframework.security.boot.jwt.property.SecurityJwtAuthcProperties;
 import org.springframework.security.boot.jwt.property.SecurityJwtAuthzProperties;
 
-@ConfigurationProperties(prefix = SecurityJwtProperties.PREFIX)
-public class SecurityJwtProperties {
+@ConfigurationProperties(prefix = SecurityJwtSessionProperties.PREFIX)
+public class SecurityJwtSessionProperties {
 
 	public static final String PREFIX = "spring.security.jwt";
 	
@@ -22,7 +22,9 @@ public class SecurityJwtProperties {
 	private SecurityRedirectProperties redirect = new SecurityRedirectProperties();
 	@NestedConfigurationProperty
 	private SecuritySessionMgtProperties sessionMgt = new SecuritySessionMgtProperties();
-
+	private String invalidSessionUrl = "/";
+	private boolean useForward = false;
+	
 	public SecurityCaptchaProperties getCaptcha() {
 		return captcha;
 	}
@@ -53,6 +55,22 @@ public class SecurityJwtProperties {
 
 	public void setSessionMgt(SecuritySessionMgtProperties sessionMgt) {
 		this.sessionMgt = sessionMgt;
+	}
+
+	public String getInvalidSessionUrl() {
+		return invalidSessionUrl;
+	}
+
+	public void setInvalidSessionUrl(String invalidSessionUrl) {
+		this.invalidSessionUrl = invalidSessionUrl;
+	}
+
+	public boolean isUseForward() {
+		return useForward;
+	}
+
+	public void setUseForward(boolean useForward) {
+		this.useForward = useForward;
 	}
 
 }
