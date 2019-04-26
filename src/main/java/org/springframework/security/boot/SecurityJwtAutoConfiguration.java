@@ -3,7 +3,9 @@ package org.springframework.security.boot;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +20,11 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailu
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEntryPoint;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
+import org.springframework.security.boot.jwt.authentication.JwtAuthenticationToken;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
+import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
@@ -37,6 +42,8 @@ import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
+
+import com.github.vindell.jwt.JwtPayload;
 
 @Configuration
 @AutoConfigureBefore(SecurityBizAutoConfiguration.class)
@@ -142,6 +149,29 @@ public class SecurityJwtAutoConfiguration{
 	}
 	
 	@Bean
+	@ConditionalOnMissingBean
+	public JwtPayloadRepository payloadRepository() {
+		return new JwtPayloadRepository() {
+
+			@Override
+			public String issueJwt(JwtAuthenticationToken token) {
+				return null;
+			}
+
+			@Override
+			public boolean verify(JwtAuthorizationToken token, boolean checkExpiry) throws AuthenticationException {
+				return false;
+			}
+
+			@Override
+			public JwtPayload getPayload(JwtAuthorizationToken token, boolean checkExpiry) {
+				return null;
+			}
+			
+		};
+	}
+	
+	@Bean
 	public JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository, 
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners) {
 		return new JwtAuthenticationSuccessHandler(payloadRepository, authenticationListeners);
@@ -157,7 +187,7 @@ public class SecurityJwtAutoConfiguration{
 	@Bean
 	public JwtAuthcOrAuthzFailureHandler jwtAuthorizationFailureHandler(
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
-			RedirectStrategy redirectStrategy) {
+			@Qualifier("jwtRedirectStrategy") RedirectStrategy redirectStrategy) {
 		JwtAuthcOrAuthzFailureHandler failureHandler = new JwtAuthcOrAuthzFailureHandler(
 				authenticationListeners);
 		failureHandler.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
