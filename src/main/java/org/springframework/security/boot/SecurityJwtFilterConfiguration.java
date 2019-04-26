@@ -42,7 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
 @ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ SecurityJwtProperties.class })
-@Order(103)
+@Order(106)
 public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
 
 	private ApplicationEventPublisher eventPublisher;
