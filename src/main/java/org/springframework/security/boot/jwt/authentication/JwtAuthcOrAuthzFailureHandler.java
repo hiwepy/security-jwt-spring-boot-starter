@@ -20,6 +20,7 @@ import org.springframework.security.boot.biz.exception.IdentityCodeExpiredExcept
 import org.springframework.security.boot.biz.exception.IdentityCodeIncorrectException;
 import org.springframework.security.boot.jwt.exception.JwtExpiredException;
 import org.springframework.security.boot.jwt.exception.JwtIncorrectException;
+import org.springframework.security.boot.utils.WebUtils;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.ExceptionMappingAuthenticationFailureHandler;
@@ -48,8 +49,14 @@ public class JwtAuthcOrAuthzFailureHandler extends ExceptionMappingAuthenticatio
 				authenticationListener.onFailure(request, response, e);
 			}
 		}
-		
-		writeJSONString(request, response, e);
+		/*
+		 * if Rest request return json else rediect to specific page
+		 */
+		if (WebUtils.isPostRequest(request)) {
+			this.writeJSONString(request, response, e);
+		} else {
+			super.onAuthenticationFailure(request, response, e);
+		}
 		
 	}
 	

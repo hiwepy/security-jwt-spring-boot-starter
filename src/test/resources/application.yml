@@ -1,9 +1,38 @@
-server:
-  port: 7900
-
-flyway: 
-  enabled: true
-  baseline-on-migrate: true
-  baseline-version: 1.0.0
-  baseline-description: 系统初始化 
-  
+spring:
+  # Spring Security 配置
+  security:
+             # 默认路径拦截规则定义
+    filter-chain-definition-map:
+       '[/]' : anon
+       '[/**/favicon.ico]' : anon
+       '[/webjars/**]': anon
+       '[/assets/**]' : anon
+       '[/error*]' : anon
+       '[/logo/**]' : anon
+       '[/swagger-ui.html**]' : anon
+       '[/swagger-resources/**]' : anon
+       '[/doc.html**]' : anon
+       '[/bycdao-ui/**]' : anon
+       '[/v2/**]' : anon
+       '[/kaptcha*]' : anon
+       '[/actuator*]' : anon
+       '[/actuator/**]' : anon
+       '[/druid/*]' : ipaddr[192.168.1.0/24]
+       '[/monitoring]' : roles[admin]
+       '[/monitoring2]' : roles[1,admin]
+       '[/monitoring3]' : perms[1,admin]
+       '[/monitoring4]' : perms[1]
+    jwt:
+      authc:
+        continue-chain-before-successful-authentication: false
+        login-url-pattern: /login/jwt
+        password-parameter: pwd
+        post-only: true
+        use-forward: false
+      authz:        allow-session-creation: false
+        continue-chain-before-successful-authentication: true
+        path-pattern: /**
+        
+      
+      
+      
