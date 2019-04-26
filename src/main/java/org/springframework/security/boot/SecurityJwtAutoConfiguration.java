@@ -47,7 +47,6 @@ import com.github.vindell.jwt.JwtPayload;
 
 @Configuration
 @AutoConfigureBefore(SecurityBizAutoConfiguration.class)
-@ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ SecurityJwtProperties.class })
 public class SecurityJwtAutoConfiguration{
 
@@ -183,7 +182,6 @@ public class SecurityJwtAutoConfiguration{
 	 *# Jwt授权 (authorization)配置
 	 *###################################################################
 	 */
-	
 	@Bean
 	public JwtAuthcOrAuthzFailureHandler jwtAuthorizationFailureHandler(
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,

@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -19,17 +18,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
-import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEntryPoint;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
+import org.springframework.security.boot.jwt.property.SecurityJwtAuthcProperties;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -52,15 +47,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 @AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
 @ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtProperties.class })
+@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
 @Order(106)
-public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
+public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
 
 	private ApplicationEventPublisher eventPublisher;
 	
 	@Autowired
 	private SecurityJwtProperties jwtProperties;
-	
+	@Autowired
+	private SecurityJwtAuthcProperties jwtAuthcProperties;
+	@Autowired
+	private SecurityJwtAuthzProperties jwtAuthzProperties;
 	@Autowired
 	private AuthenticationManager authenticationManager;
 	@Autowired
@@ -93,70 +91,20 @@ public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter
     @Autowired
     @Qualifier("jwtSecurityContextLogoutHandler") 
     private SecurityContextLogoutHandler jwtSecurityContextLogoutHandler;
-    @Autowired(required = false)
-    private CaptchaResolver captchaResolver;
      
     @Autowired
-    private JwtAuthenticationProvider jwtAuthenticationProvider;
-    @Autowired
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    @Autowired
-    private JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler;
     @Autowired
     private JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler;
     @Autowired
     private JwtAuthorizationProvider jwtAuthorizationProvider;
     
     @Bean
-	@ConditionalOnMissingBean
-	public AuthenticatingFailureCounter jwtAuthenticatingFailureCounter() {
-		AuthenticatingFailureRequestCounter  failureCounter = new AuthenticatingFailureRequestCounter();
-		failureCounter.setRetryTimesKeyParameter(jwtProperties.getAuthc().getRetryTimesKeyParameter());
-		return failureCounter;
-	}
-    
-    @Bean
-	public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() throws Exception {
-    	
-        JwtAuthenticationProcessingFilter authcFilter = new JwtAuthenticationProcessingFilter(objectMapper);
-        
-        authcFilter.setCaptchaParameter(jwtProperties.getCaptcha().getParamName());
-		// 是否验证码必填
-		authcFilter.setCaptchaRequired(jwtProperties.getCaptcha().isRequired());
-		// 登陆失败重试次数，超出限制需要输入验证码
-		authcFilter.setRetryTimesWhenAccessDenied(jwtProperties.getCaptcha().getRetryTimesWhenAccessDenied());
-		// 验证码解析器
-		authcFilter.setCaptchaResolver(captchaResolver);
-		// 认证失败计数器
-		authcFilter.setFailureCounter(jwtAuthenticatingFailureCounter);
-
-		authcFilter.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
-		authcFilter.setApplicationEventPublisher(eventPublisher);
-		authcFilter.setAuthenticationFailureHandler(jwtAuthcOrAuthzFailureHandler);
-		authcFilter.setAuthenticationManager(authenticationManager);
-		authcFilter.setAuthenticationSuccessHandler(jwtAuthenticationSuccessHandler);
-		authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtProperties.getAuthc().isContinueChainBeforeSuccessfulAuthentication());
-		if (StringUtils.hasText(jwtProperties.getAuthc().getLoginUrlPattern())) {
-			authcFilter.setFilterProcessesUrl(jwtProperties.getAuthc().getLoginUrlPattern());
-		}
-		//authcFilter.setMessageSource(messageSource);
-		authcFilter.setUsernameParameter(jwtProperties.getAuthc().getUsernameParameter());
-		authcFilter.setPasswordParameter(jwtProperties.getAuthc().getPasswordParameter());
-		authcFilter.setPostOnly(jwtProperties.getAuthc().isPostOnly());
-		authcFilter.setRememberMeServices(rememberMeServices);
-		authcFilter.setRetryTimesKeyAttribute(jwtProperties.getAuthc().getRetryTimesKeyAttribute());
-		authcFilter.setRetryTimesWhenAccessDenied(jwtProperties.getAuthc().getRetryTimesWhenAccessDenied());
-		authcFilter.setSessionAuthenticationStrategy(jwtSessionAuthenticationStrategy);
-		
-        return authcFilter;
-    }
-    
-    @Bean
     public JwtAuthorizationProcessingFilter jwtAuthorizationProcessingFilter() {
     	
     	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter();
 		
-		authcFilter.setAllowSessionCreation(jwtProperties.getAuthz().isAllowSessionCreation());
+		authcFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
 		authcFilter.setApplicationEventPublisher(eventPublisher);
 		authcFilter.setAuthenticationFailureHandler(jwtAuthcOrAuthzFailureHandler);
 		authcFilter.setAuthenticationManager(authenticationManager);
@@ -166,16 +114,16 @@ public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter
 				// no-op - just allow filter chain to continue to token endpoint
 			}
 		});
-		authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtProperties.getAuthz().isContinueChainBeforeSuccessfulAuthentication());
-		if (StringUtils.hasText(jwtProperties.getAuthz().getPathPattern())) {
-			authcFilter.setFilterProcessesUrl(jwtProperties.getAuthz().getPathPattern());
+		authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
+		if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
+			authcFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
 		}
-		if (StringUtils.hasText(jwtProperties.getAuthc().getLoginUrlPattern())) {
-			authcFilter.setLoginFilterProcessesUrl(jwtProperties.getAuthc().getLoginUrlPattern());
+		if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPattern())) {
+			authcFilter.setLoginFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPattern());
 		}
-		authcFilter.setAuthorizationCookieName(jwtProperties.getAuthz().getAuthorizationCookieName());
-		authcFilter.setAuthorizationHeaderName(jwtProperties.getAuthz().getAuthorizationHeaderName());
-		authcFilter.setAuthorizationParamName(jwtProperties.getAuthz().getAuthorizationParamName());
+		authcFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
+		authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
+		authcFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
 		authcFilter.setRememberMeServices(rememberMeServices);
 		authcFilter.setSessionAuthenticationStrategy(jwtSessionAuthenticationStrategy);
 		
@@ -185,8 +133,7 @@ public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter
 	 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(jwtAuthenticationProvider)
-        	.authenticationProvider(jwtAuthorizationProvider)
+        auth.authenticationProvider(jwtAuthorizationProvider)
         	.userDetailsService(userDetailsService);
     }
 
@@ -211,7 +158,7 @@ public class SecurityJwtFilterConfiguration extends WebSecurityConfigurerAdapter
 			.expiredUrl(jwtProperties.getLogout().getLogoutUrl())
 			.sessionRegistry(sessionRegistry)
 			.and()
-    		.sessionAuthenticationErrorUrl(jwtProperties.getAuthc().getFailureUrl())
+    		.sessionAuthenticationErrorUrl(jwtAuthcProperties.getFailureUrl())
     		.sessionAuthenticationFailureHandler(jwtAuthcOrAuthzFailureHandler)
     		.sessionAuthenticationStrategy(jwtSessionAuthenticationStrategy)
     		.sessionCreationPolicy(sessionMgt.getCreationPolicy())

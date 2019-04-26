@@ -13,37 +13,15 @@ import org.springframework.security.boot.jwt.property.SecurityJwtAuthzProperties
 public class SecurityJwtProperties {
 
 	public static final String PREFIX = "spring.security.jwt";
-
-	/** Whether Enable JWT Authentication. */
-	private boolean enabled = false;
-	@NestedConfigurationProperty
-	private SecurityJwtAuthcProperties authc = new SecurityJwtAuthcProperties();
+	
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
-	@NestedConfigurationProperty
-	private SecurityJwtAuthzProperties authz = new SecurityJwtAuthzProperties();
 	@NestedConfigurationProperty
 	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
 	@NestedConfigurationProperty
 	private SecurityRedirectProperties redirect = new SecurityRedirectProperties();
 	@NestedConfigurationProperty
 	private SecuritySessionMgtProperties sessionMgt = new SecuritySessionMgtProperties();
-	
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-
-	public SecurityJwtAuthcProperties getAuthc() {
-		return authc;
-	}
-
-	public void setAuthc(SecurityJwtAuthcProperties authc) {
-		this.authc = authc;
-	}
 
 	public SecurityCaptchaProperties getCaptcha() {
 		return captcha;
@@ -51,14 +29,6 @@ public class SecurityJwtProperties {
 
 	public void setCaptcha(SecurityCaptchaProperties captcha) {
 		this.captcha = captcha;
-	}
-
-	public SecurityJwtAuthzProperties getAuthz() {
-		return authz;
-	}
-
-	public void setAuthz(SecurityJwtAuthzProperties authz) {
-		this.authz = authz;
 	}
 
 	public SecurityLogoutProperties getLogout() {

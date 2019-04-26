@@ -13,20 +13,22 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.springframework.security.boot.jwt.property;
+package org.springframework.security.boot;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationProcessingFilter;
 import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@ConfigurationProperties(prefix = SecurityJwtAuthcProperties.PREFIX)
 public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
-
+	
 	public static final String PREFIX = "spring.security.jwt.authc";
 	
 	/** Whether Enable JWT Authentication. */
