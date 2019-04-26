@@ -23,6 +23,7 @@ spring:
        '[/monitoring3]' : perms[1,admin]
        '[/monitoring4]' : perms[1]
     jwt:
+      enabled: true
       authc:
         continue-chain-before-successful-authentication: false
         login-url-pattern: /login/jwt

@@ -12,6 +12,8 @@ public class SecurityJwtProperties {
 
 	public static final String PREFIX = "spring.security.jwt";
 
+	/** Whether Enable JWT Authentication. */
+	private boolean enabled = false;
 	@NestedConfigurationProperty
 	private SecurityJwtAuthcProperties authc = new SecurityJwtAuthcProperties();
 	@NestedConfigurationProperty
@@ -21,6 +23,14 @@ public class SecurityJwtProperties {
 	@NestedConfigurationProperty
 	private SecuritySessionMgtProperties sessionMgt = new SecuritySessionMgtProperties();
 	
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
 	public SecurityJwtAuthcProperties getAuthc() {
 		return authc;
 	}
