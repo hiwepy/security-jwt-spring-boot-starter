@@ -3,6 +3,8 @@ package org.springframework.security.boot;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
+import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
+import org.springframework.security.boot.biz.property.SecurityRedirectProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.jwt.property.SecurityJwtAuthcProperties;
 import org.springframework.security.boot.jwt.property.SecurityJwtAuthzProperties;
@@ -20,6 +22,10 @@ public class SecurityJwtProperties {
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
 	@NestedConfigurationProperty
 	private SecurityJwtAuthzProperties authz = new SecurityJwtAuthzProperties();
+	@NestedConfigurationProperty
+	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
+	@NestedConfigurationProperty
+	private SecurityRedirectProperties redirect = new SecurityRedirectProperties();
 	@NestedConfigurationProperty
 	private SecuritySessionMgtProperties sessionMgt = new SecuritySessionMgtProperties();
 	
@@ -53,6 +59,22 @@ public class SecurityJwtProperties {
 
 	public void setAuthz(SecurityJwtAuthzProperties authz) {
 		this.authz = authz;
+	}
+
+	public SecurityLogoutProperties getLogout() {
+		return logout;
+	}
+
+	public void setLogout(SecurityLogoutProperties logout) {
+		this.logout = logout;
+	}
+
+	public SecurityRedirectProperties getRedirect() {
+		return redirect;
+	}
+
+	public void setRedirect(SecurityRedirectProperties redirect) {
+		this.redirect = redirect;
 	}
 
 	public SecuritySessionMgtProperties getSessionMgt() {

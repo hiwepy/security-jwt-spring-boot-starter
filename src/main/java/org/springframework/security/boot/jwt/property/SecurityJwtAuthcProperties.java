@@ -21,10 +21,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationProcessingFilter;
+import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-public class SecurityJwtAuthcProperties {
+public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 
 	/** Authentication Path Pattern */
 	private String loginUrlPattern = "/login/jwt";
