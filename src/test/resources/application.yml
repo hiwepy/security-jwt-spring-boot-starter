@@ -23,14 +23,15 @@ spring:
        '[/monitoring3]' : perms[1,admin]
        '[/monitoring4]' : perms[1]
     jwt:
-      enabled: true
       authc:
+        enabled: true
         continue-chain-before-successful-authentication: false
-        login-url-pattern: /login/jwt
+        login-url-patterns: /login/jwt
         password-parameter: pwd
         post-only: true
         use-forward: false
-      authz:        allow-session-creation: false
+      authz:
+        enabled: true        allow-session-creation: false
         continue-chain-before-successful-authentication: true
         path-pattern: /**
         
