@@ -6,11 +6,9 @@ import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecurityRedirectProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
-import org.springframework.security.boot.jwt.property.SecurityJwtAuthcProperties;
-import org.springframework.security.boot.jwt.property.SecurityJwtAuthzProperties;
 
-@ConfigurationProperties(prefix = SecurityJwtSessionProperties.PREFIX)
-public class SecurityJwtSessionProperties {
+@ConfigurationProperties(prefix = SecurityJwtProperties.PREFIX)
+public class SecurityJwtProperties {
 
 	public static final String PREFIX = "spring.security.jwt";
 	

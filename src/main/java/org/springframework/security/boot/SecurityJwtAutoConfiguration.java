@@ -9,8 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
@@ -20,18 +18,13 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEnt
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
-import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
@@ -39,16 +32,14 @@ import org.springframework.security.web.session.SessionInformationExpiredStrateg
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @Configuration
 @AutoConfigureBefore(SecurityBizAutoConfiguration.class)
-@ConditionalOnProperty(prefix = SecurityJwtSessionProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtSessionProperties.class })
-public class SecurityJwtSessionAutoConfiguration extends WebSecurityConfigurerAdapter{
+@ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
+@EnableConfigurationProperties({ SecurityJwtProperties.class })
+public class SecurityJwtAutoConfiguration extends WebSecurityConfigurerAdapter{
 
 	@Autowired
-	private SecurityJwtSessionProperties jwtProperties;
+	private SecurityJwtProperties jwtProperties;
 	
 	@Bean("jwtRedirectStrategy")
 	public RedirectStrategy jwtRedirectStrategy() {
@@ -61,9 +52,7 @@ public class SecurityJwtSessionAutoConfiguration extends WebSecurityConfigurerAd
 	public RequestCache jwtRequestCache() {
 		HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
 		requestCache.setCreateSessionAllowed(jwtProperties.getSessionMgt().isAllowSessionCreation());
-		// requestCache.setPortResolver(portResolver);
-		// requestCache.setRequestMatcher(requestMatcher);
-		// requestCache.setSessionAttrName(sessionAttrName);
+		requestCache.setSessionAttrName(jwtProperties.getSessionMgt().getSessionAttrName());
 		return requestCache;
 	}
 
@@ -78,16 +67,6 @@ public class SecurityJwtSessionAutoConfiguration extends WebSecurityConfigurerAd
 	@Bean("jwtExpiredSessionStrategy")
 	public SessionInformationExpiredStrategy jwtExpiredSessionStrategy() {
 		return new SimpleRedirectSessionInformationExpiredStrategy(jwtProperties.getInvalidSessionUrl(), jwtRedirectStrategy());
-	}
-	
-	@Bean("jwtCsrfTokenRepository")
-	public CsrfTokenRepository jwtCsrfTokenRepository() {
-		// Session 管理器配置参数
-		SecuritySessionMgtProperties sessionMgt = jwtProperties.getSessionMgt();
-		if (SessionFixationPolicy.CHANGE_SESSION_ID.equals(sessionMgt.getFixationPolicy())) {
-			return new CookieCsrfTokenRepository();
-		}
-		return new HttpSessionCsrfTokenRepository();
 	}
 
 	@Bean("jwtSessionAuthenticationStrategy")
@@ -127,7 +106,6 @@ public class SecurityJwtSessionAutoConfiguration extends WebSecurityConfigurerAd
 		return failureHandler;
 	}
 	
-
 	@Bean
 	public JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint() {
 
@@ -136,28 +114,13 @@ public class SecurityJwtSessionAutoConfiguration extends WebSecurityConfigurerAd
 		return entryPoint;
 	}
 
-	@Autowired
-	private AuthenticationManager authenticationManager;
-	@Autowired
-	private ObjectMapper objectMapper;
-	@Autowired
-	private RememberMeServices rememberMeServices;
+	@Autowired(required = false) 
+	private List<AuthenticationListener> authenticationListeners;
 	@Autowired
     private SessionRegistry sessionRegistry;
 	@Autowired
-	private UserDetailsService userDetailsService;
-	@Autowired(required = false) 
-	private List<AuthenticationListener> authenticationListeners;
-	
-	@Autowired
-	@Qualifier("jwtAuthenticatingFailureCounter")
-	private AuthenticatingFailureCounter jwtAuthenticatingFailureCounter;
-	@Autowired
 	@Qualifier("jwtSessionAuthenticationStrategy")
 	private SessionAuthenticationStrategy jwtSessionAuthenticationStrategy;
-    @Autowired
-    @Qualifier("jwtCsrfTokenRepository")
-	private CsrfTokenRepository jwtCsrfTokenRepository;
     @Autowired
     @Qualifier("jwtExpiredSessionStrategy")
     private SessionInformationExpiredStrategy jwtExpiredSessionStrategy;

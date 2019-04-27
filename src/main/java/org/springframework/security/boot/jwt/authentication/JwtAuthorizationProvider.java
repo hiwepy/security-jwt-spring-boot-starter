@@ -6,7 +6,7 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.boot.biz.userdetails.BaseAuthenticationUserDetailsService;
+import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
 import org.springframework.security.boot.jwt.userdetails.JwtUserDetails;
 import org.springframework.security.core.Authentication;
@@ -25,11 +25,11 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 	
 	protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final BaseAuthenticationUserDetailsService userDetailsService;
+    private final AuthcUserDetailsService authcUserDetailsService;
     private UserDetailsChecker userDetailsChecker = new AccountStatusUserDetailsChecker();
     
-    public JwtAuthorizationProvider(final BaseAuthenticationUserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
+    public JwtAuthorizationProvider(final AuthcUserDetailsService authcUserDetailsService) {
+        this.authcUserDetailsService = authcUserDetailsService;
     }
 
     /**
@@ -56,7 +56,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 			throw new BadCredentialsException("No principal found in request.");
 		}
         
-		JwtUserDetails ud = (JwtUserDetails) userDetailsService.loadUserDetails(authentication);
+		JwtUserDetails ud = (JwtUserDetails) getAuthcUserDetailsService().loadUserDetails(authentication);
         
         // User Status Check
         getUserDetailsChecker().check(ud);
@@ -83,6 +83,10 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 
 	public UserDetailsChecker getUserDetailsChecker() {
 		return userDetailsChecker;
+	}
+
+	public AuthcUserDetailsService getAuthcUserDetailsService() {
+		return authcUserDetailsService;
 	}
     
 }

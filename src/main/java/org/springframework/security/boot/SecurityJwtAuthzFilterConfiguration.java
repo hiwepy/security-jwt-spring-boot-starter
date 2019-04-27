@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,8 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.biz.userdetails.BaseAuthenticationUserDetailsService;
+import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
@@ -32,17 +30,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.savedrequest.RequestCache;
-import org.springframework.security.web.session.InvalidSessionStrategy;
-import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 
 @Configuration
 @AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
-@ConditionalOnProperty(prefix = SecurityJwtSessionProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtSessionProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
+@ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
+@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
 @Order(106)
 public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
 
@@ -58,37 +50,15 @@ public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAd
 	private RememberMeServices rememberMeServices;
 	@Autowired
 	private UserDetailsService userDetailsService;
-	
 	@Autowired
-	@Qualifier("jwtAuthenticatingFailureCounter")
-	private AuthenticatingFailureCounter jwtAuthenticatingFailureCounter;
-	@Autowired
-	@Qualifier("jwtSessionAuthenticationStrategy")
-	private SessionAuthenticationStrategy jwtSessionAuthenticationStrategy;
-    @Autowired
-    @Qualifier("jwtCsrfTokenRepository")
-	private CsrfTokenRepository jwtCsrfTokenRepository;
-    @Autowired
-    @Qualifier("jwtExpiredSessionStrategy")
-    private SessionInformationExpiredStrategy jwtExpiredSessionStrategy;
-    @Autowired
-    @Qualifier("jwtRequestCache")
-    private RequestCache jwtRequestCache;
-    @Autowired
-    @Qualifier("jwtInvalidSessionStrategy")
-    private InvalidSessionStrategy jwtInvalidSessionStrategy;
-    @Autowired
-    @Qualifier("jwtSecurityContextLogoutHandler") 
-    private SecurityContextLogoutHandler jwtSecurityContextLogoutHandler;
-     
+	private AuthcUserDetailsService authcUserDetailsService;
     @Autowired
     private JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler;
-    @Autowired
-    private JwtAuthorizationProvider jwtAuthorizationProvider;
 
+    
 	@Bean
-	public JwtAuthorizationProvider jwtAuthorizationProvider(BaseAuthenticationUserDetailsService userDetailsService) {
-		return new JwtAuthorizationProvider(userDetailsService);
+	public JwtAuthorizationProvider jwtAuthorizationProvider() {
+		return new JwtAuthorizationProvider(authcUserDetailsService);
 	}
     
     @Bean
@@ -117,7 +87,6 @@ public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAd
 		authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
 		authcFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
 		authcFilter.setRememberMeServices(rememberMeServices);
-		authcFilter.setSessionAuthenticationStrategy(jwtSessionAuthenticationStrategy);
 		
         return authcFilter;
     }
@@ -125,7 +94,7 @@ public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAd
 	 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(jwtAuthorizationProvider)
+        auth.authenticationProvider(jwtAuthorizationProvider())
         	.userDetailsService(userDetailsService);
     }
 

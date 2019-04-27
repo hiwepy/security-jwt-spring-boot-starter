@@ -18,7 +18,8 @@ import org.springframework.security.boot.biz.authentication.AuthenticatingFailur
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
-import org.springframework.security.boot.biz.userdetails.BaseAuthenticationUserDetailsService;
+import org.springframework.security.boot.biz.authentication.captcha.NullCaptchaResolver;
+import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
@@ -38,7 +39,6 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
@@ -48,15 +48,15 @@ import com.github.vindell.jwt.JwtPayload;
 
 @Configuration
 @AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
-@ConditionalOnProperty(prefix = SecurityJwtSessionProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtSessionProperties.class, SecurityJwtAuthcProperties.class })
+@ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
+@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class })
 @Order(106)
 public class SecurityJwtAuthcFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
 
 	private ApplicationEventPublisher eventPublisher;
 	
 	@Autowired
-	private SecurityJwtSessionProperties jwtProperties;
+	private SecurityJwtProperties jwtProperties;
 	@Autowired
 	private SecurityJwtAuthcProperties jwtAuthcProperties;
 	@Autowired
@@ -67,16 +67,16 @@ public class SecurityJwtAuthcFilterConfiguration extends WebSecurityConfigurerAd
 	private RememberMeServices rememberMeServices;
 	@Autowired
 	private UserDetailsService userDetailsService;
-	
+	@Autowired
+	private AuthcUserDetailsService authcUserDetailsService;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 	@Autowired
 	@Qualifier("jwtAuthenticatingFailureCounter")
 	private AuthenticatingFailureCounter jwtAuthenticatingFailureCounter;
 	@Autowired
 	@Qualifier("jwtSessionAuthenticationStrategy")
 	private SessionAuthenticationStrategy jwtSessionAuthenticationStrategy;
-    @Autowired
-    @Qualifier("jwtCsrfTokenRepository")
-	private CsrfTokenRepository jwtCsrfTokenRepository;
     @Autowired
     @Qualifier("jwtExpiredSessionStrategy")
     private SessionInformationExpiredStrategy jwtExpiredSessionStrategy;
@@ -89,11 +89,9 @@ public class SecurityJwtAuthcFilterConfiguration extends WebSecurityConfigurerAd
     @Autowired
     @Qualifier("jwtSecurityContextLogoutHandler") 
     private SecurityContextLogoutHandler jwtSecurityContextLogoutHandler;
-    @Autowired(required = false)
-    private CaptchaResolver captchaResolver;
-     
     @Autowired
-    private JwtAuthenticationProvider jwtAuthenticationProvider;
+    private CaptchaResolver captchaResolver;
+    
     @Autowired
     private JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler;
     @Autowired
@@ -104,6 +102,12 @@ public class SecurityJwtAuthcFilterConfiguration extends WebSecurityConfigurerAd
 	 *# Jwt认证 (authentication) 配置
 	 *###################################################################
 	 */
+
+    @Bean
+	@ConditionalOnMissingBean 
+	public CaptchaResolver captchaResolver() {
+		return new NullCaptchaResolver();
+	}
     
 	@Bean
 	@ConditionalOnMissingBean
@@ -142,11 +146,9 @@ public class SecurityJwtAuthcFilterConfiguration extends WebSecurityConfigurerAd
 		return failureCounter;
 	}
 	
-	
 	@Bean
-	public JwtAuthenticationProvider jwtAuthenticationProvider(BaseAuthenticationUserDetailsService userDetailsService,
-			PasswordEncoder passwordEncoder) {
-		return new JwtAuthenticationProvider(userDetailsService, passwordEncoder);
+	public JwtAuthenticationProvider jwtAuthenticationProvider() {
+		return new JwtAuthenticationProvider(authcUserDetailsService, passwordEncoder);
 	}
     
     @Bean
@@ -189,7 +191,7 @@ public class SecurityJwtAuthcFilterConfiguration extends WebSecurityConfigurerAd
 	 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(jwtAuthenticationProvider)
+        auth.authenticationProvider(jwtAuthenticationProvider())
         	.userDetailsService(userDetailsService);
     }
 
