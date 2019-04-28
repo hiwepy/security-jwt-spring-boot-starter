@@ -124,8 +124,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 			if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
 				authcFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
 			}
-			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPattern())) {
-				authcFilter.setLoginFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPattern());
+			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPatterns())) {
+				authcFilter.setLoginFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPatterns());
 			}
 			authcFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
 			authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());

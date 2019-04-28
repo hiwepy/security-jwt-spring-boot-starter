@@ -32,6 +32,7 @@ import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
@@ -182,8 +183,8 @@ public class SecurityJwtAuthcFilterConfiguration {
 			authcFilter.setAuthenticationManager(authenticationManager);
 			authcFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler);
 			authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthcProperties.isContinueChainBeforeSuccessfulAuthentication());
-			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPattern())) {
-				authcFilter.setFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPattern());
+			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPatterns())) {
+				authcFilter.setFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPatterns());
 			}
 			//authcFilter.setMessageSource(messageSource);
 			authcFilter.setUsernameParameter(jwtAuthcProperties.getUsernameParameter());
@@ -207,6 +208,11 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
 	    	http.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
+	    
+	    @Override
+   	    public void configure(WebSecurity web) throws Exception {
+   	    	web.ignoring().antMatchers(jwtAuthcProperties.getLoginUrlPatterns());
+   	    }
 
 		@Override
 		public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
