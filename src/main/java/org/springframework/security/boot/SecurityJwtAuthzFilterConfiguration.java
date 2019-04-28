@@ -35,7 +35,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
 @ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
-@Order(106)
 public class SecurityJwtAuthzFilterConfiguration implements ApplicationEventPublisherAware {
 
 	private ApplicationEventPublisher eventPublisher;
