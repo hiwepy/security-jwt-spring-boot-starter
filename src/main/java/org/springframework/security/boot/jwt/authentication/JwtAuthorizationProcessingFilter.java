@@ -16,18 +16,22 @@
 package org.springframework.security.boot.jwt.authentication;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
@@ -36,8 +40,6 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  * @author ： <a href="https://github.com/vindell">vindell</a>
  */
 public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProcessingFilter {
-
-	private RequestMatcher loginAuthenticationRequestMatcher = new AntPathRequestMatcher("/login", "POST");
 
 	public static final String AUTHORIZATION_PARAM = "token";
 	/**
@@ -48,15 +50,27 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	private String authorizationHeaderName = AUTHORIZATION_HEADER;
 	private String authorizationParamName = AUTHORIZATION_PARAM;
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
-
-	public JwtAuthorizationProcessingFilter() {
+	private RequestMatcher ignoreRequestMatcher;
+	
+	public JwtAuthorizationProcessingFilter(String... ignorePatterns) {
 		super(new AntPathRequestMatcher("/**"));
+		if(ArrayUtils.isNotEmpty(ignorePatterns)) {
+			List<RequestMatcher> ignoreRequestMatchers = new ArrayList<>();
+			for (String pattern : ignorePatterns) {
+				ignoreRequestMatchers.add(new AntPathRequestMatcher(pattern));
+			}
+			ignoreRequestMatcher = new OrRequestMatcher(ignoreRequestMatchers);
+		}
 	}
 
 	@Override
 	protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
+		// 忽略部分请求
+		if(ignoreRequestMatcher != null && ignoreRequestMatcher.matches(request)) {
+			return false;
+		}
 		// 登录获取JWT的请求不拦截
-		return super.requiresAuthentication(request, response) && !loginAuthenticationRequestMatcher.matches(request);
+		return super.requiresAuthentication(request, response);
 	}
 
 	@Override
@@ -129,19 +143,6 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 
 	public void setAuthorizationCookieName(String authorizationCookieName) {
 		this.authorizationCookieName = authorizationCookieName;
-	}
-
-	/**
-	 * Sets the URL that determines if authentication is required
-	 * @param filterProcessesUrl
-	 */
-	public void setLoginFilterProcessesUrl(String filterProcessesUrl) {
-		setLoginAuthenticationRequestMatcher(new AntPathRequestMatcher(
-				filterProcessesUrl));
-	}
-
-	public void setLoginAuthenticationRequestMatcher(RequestMatcher loginAuthenticationRequestMatcher) {
-		this.loginAuthenticationRequestMatcher = loginAuthenticationRequestMatcher;
 	}
 
 }

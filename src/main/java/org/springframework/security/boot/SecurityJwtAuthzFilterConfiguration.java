@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
@@ -26,6 +27,7 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProv
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.session.SessionRegistry;
@@ -63,7 +65,6 @@ public class SecurityJwtAuthzFilterConfiguration {
     	private final AuthenticationManager authenticationManager;
 	    private final RememberMeServices rememberMeServices;
 	    
-		private final SecurityJwtAuthcProperties jwtAuthcProperties;
     	private final SecurityJwtAuthzProperties jwtAuthzProperties;
  	    private final JwtAuthorizationProvider authorizationProvider;
  	    private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
@@ -77,7 +78,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    				ObjectProvider<SessionRegistry> sessionRegistryProvider,
    				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
    				
-   				SecurityJwtAuthcProperties jwtAuthcProperties,
    				SecurityJwtAuthzProperties jwtAuthzProperties,
    				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
    				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandler,
@@ -95,7 +95,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			
-   			this.jwtAuthcProperties = jwtAuthcProperties;
    			this.jwtAuthzProperties = jwtAuthzProperties;
    			
    			this.authorizationProvider = authenticationProvider.getIfAvailable();
@@ -108,7 +107,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 		@Bean
 	    public JwtAuthorizationProcessingFilter authorizationProcessingFilter() {
 	    	
-	    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter();
+	    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter(jwtAuthzProperties.getIgnorePatterns());
 			
 			authcFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
 			authcFilter.setApplicationEventPublisher(eventPublisher);
@@ -123,9 +122,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 			authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
 			if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
 				authcFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
-			}
-			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPatterns())) {
-				authcFilter.setLoginFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPatterns());
 			}
 			authcFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
 			authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
@@ -144,8 +140,18 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    @Override
 	    protected void configure(HttpSecurity http) throws Exception {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
+	    	// 禁用缓存
+	    	http.headers().cacheControl();
+	    	// 添加JWT filter
 	    	http.addFilterBefore(authorizationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
+	    
+	    @Override
+   	    public void configure(WebSecurity web) throws Exception {
+   	    	web.ignoring()
+   	    		.antMatchers(jwtAuthzProperties.getIgnorePatterns())
+   	    		.antMatchers(HttpMethod.OPTIONS, "/**");
+   	    }
 
 		@Override
 		public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {

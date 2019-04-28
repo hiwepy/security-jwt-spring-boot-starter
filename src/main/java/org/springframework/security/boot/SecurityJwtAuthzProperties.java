@@ -33,6 +33,8 @@ public class SecurityJwtAuthzProperties {
 	private boolean allowSessionCreation = false;
 	/** Authorization Path Pattern */
 	private String pathPattern = "/**";
+	private String[] ignorePatterns = new String[] {"/login/jwt"};
+	
 	/**
 	 * Specifies the name of the header on where to find the token (i.e.
 	 * X-Authorization).
@@ -70,6 +72,14 @@ public class SecurityJwtAuthzProperties {
 
 	public void setPathPattern(String pathPattern) {
 		this.pathPattern = pathPattern;
+	}
+	
+	public String[] getIgnorePatterns() {
+		return ignorePatterns;
+	}
+
+	public void setIgnorePatterns(String[] ignorePatterns) {
+		this.ignorePatterns = ignorePatterns;
 	}
 
 	public String getAuthorizationHeaderName() {
