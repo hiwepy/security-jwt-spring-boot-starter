@@ -91,13 +91,13 @@ public class SecurityJwtAuthzFilterConfiguration {
    				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
    				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandler,
    				
-   				@Qualifier("idcAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-   				@Qualifier("idcCsrfTokenRepository") ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
-   				@Qualifier("idcInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
-				@Qualifier("idcRequestCache") ObjectProvider<RequestCache> requestCacheProvider,
-				@Qualifier("idcSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
-				@Qualifier("idcSessionAuthenticationStrategy") ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
-				@Qualifier("idcExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider
+   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
+   				@Qualifier("jwtCsrfTokenRepository") ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
+   				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+				@Qualifier("jwtRequestCache") ObjectProvider<RequestCache> requestCacheProvider,
+				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
+				@Qualifier("jwtSessionAuthenticationStrategy") ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
+				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider
 				
 				) {
 			
