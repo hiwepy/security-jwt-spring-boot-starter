@@ -27,7 +27,6 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthenticationPro
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationToken;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
-import org.springframework.security.boot.jwt.property.SecurityJwtAuthcProperties;
 import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
