@@ -6,6 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,7 +37,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
 @Order(106)
-public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAdapter  implements ApplicationEventPublisherAware {
+public class SecurityJwtAuthzFilterConfiguration implements ApplicationEventPublisherAware {
 
 	private ApplicationEventPublisher eventPublisher;
 	
@@ -49,12 +50,9 @@ public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAd
 	@Autowired
 	private RememberMeServices rememberMeServices;
 	@Autowired
-	private UserDetailsService userDetailsService;
-	@Autowired
 	private AuthcUserDetailsService authcUserDetailsService;
     @Autowired
     private JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler;
-
     
 	@Bean
 	public JwtAuthorizationProvider jwtAuthorizationProvider() {
@@ -91,18 +89,39 @@ public class SecurityJwtAuthzFilterConfiguration extends WebSecurityConfigurerAd
         return authcFilter;
     }
     
-	 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(jwtAuthorizationProvider())
-        	.userDetailsService(userDetailsService);
-    }
+    
+    @Configuration
+	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
+    @Order(107)
+	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+    	
+		private final JwtAuthorizationProvider authorizationProvider;
+		private final JwtAuthorizationProcessingFilter authorizationProcessingFilter;
+		private final UserDetailsService userDetailsService;
+		
+		public JwtAuthzWebSecurityConfigurerAdapter(
+				ObjectProvider<UserDetailsService> userDetailsServiceProvider,
+				ObjectProvider<JwtAuthorizationProvider> authorizationProvider,
+				ObjectProvider<JwtAuthorizationProcessingFilter> authorizationProcessingFilterProvider) {
+			this.userDetailsService = userDetailsServiceProvider.getIfAvailable();
+			this.authorizationProvider = authorizationProvider.getIfAvailable();
+			this.authorizationProcessingFilter = authorizationProcessingFilterProvider.getIfAvailable();
+		}
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-    	http.addFilterBefore(jwtAuthorizationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
-    }
+		@Override
+	    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	        auth.authenticationProvider(authorizationProvider)
+	        	.userDetailsService(userDetailsService);
+	    }
+
+	    @Override
+	    protected void configure(HttpSecurity http) throws Exception {
+	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
+	    	http.addFilterBefore(authorizationProcessingFilter, UsernamePasswordAuthenticationFilter.class);
+	    }
+
+	}
+   
 
 	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
