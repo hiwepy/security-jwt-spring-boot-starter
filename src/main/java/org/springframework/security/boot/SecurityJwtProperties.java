@@ -2,7 +2,6 @@ package org.springframework.security.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecurityRedirectProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
@@ -13,8 +12,7 @@ public class SecurityJwtProperties {
 	public static final String PREFIX = "spring.security.jwt";
 	/** Whether Enable JWT . */
 	private boolean enabled = false;
-	@NestedConfigurationProperty
-	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
+	
 	@NestedConfigurationProperty
 	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
 	@NestedConfigurationProperty
@@ -30,14 +28,6 @@ public class SecurityJwtProperties {
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
-	}
-
-	public SecurityCaptchaProperties getCaptcha() {
-		return captcha;
-	}
-
-	public void setCaptcha(SecurityCaptchaProperties captcha) {
-		this.captcha = captcha;
 	}
 
 	public SecurityLogoutProperties getLogout() {

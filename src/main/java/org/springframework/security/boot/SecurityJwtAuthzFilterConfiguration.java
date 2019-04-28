@@ -7,9 +7,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
@@ -26,104 +28,130 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.session.InvalidSessionStrategy;
+import org.springframework.security.web.session.SessionInformationExpiredStrategy;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
-@AutoConfigureAfter(SecurityBizFilterAutoConfiguration.class)
-@ConditionalOnProperty(prefix = SecurityJwtProperties.PREFIX, value = "enabled", havingValue = "true")
+@AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
+@ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
-public class SecurityJwtAuthzFilterConfiguration implements ApplicationEventPublisherAware {
+public class SecurityJwtAuthzFilterConfiguration {
 
-	private ApplicationEventPublisher eventPublisher;
-	
-	@Autowired
-	private SecurityJwtAuthcProperties jwtAuthcProperties;
-	@Autowired
-	private SecurityJwtAuthzProperties jwtAuthzProperties;
-	@Autowired
-	private AuthenticationManager authenticationManager;
-	@Autowired
-	private RememberMeServices rememberMeServices;
-	@Autowired
-	private AuthcUserDetailsService authcUserDetailsService;
-    @Autowired
-    private JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler;
-    
 	@Bean
-	public JwtAuthorizationProvider jwtAuthorizationProvider() {
-		return new JwtAuthorizationProvider(authcUserDetailsService);
+	public JwtAuthorizationProvider jwtAuthorizationProvider(AuthcUserDetailsService userDetailsService) {
+		return new JwtAuthorizationProvider(userDetailsService);
 	}
     
-    @Bean
-    public JwtAuthorizationProcessingFilter jwtAuthorizationProcessingFilter() {
-    	
-    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter();
-		
-		authcFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
-		authcFilter.setApplicationEventPublisher(eventPublisher);
-		authcFilter.setAuthenticationFailureHandler(jwtAuthcOrAuthzFailureHandler);
-		authcFilter.setAuthenticationManager(authenticationManager);
-		authcFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
-			public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-					Authentication authentication) throws IOException, ServletException {
-				// no-op - just allow filter chain to continue to token endpoint
-			}
-		});
-		authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
-		if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
-			authcFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
-		}
-		if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPattern())) {
-			authcFilter.setLoginFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPattern());
-		}
-		authcFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
-		authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
-		authcFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
-		authcFilter.setRememberMeServices(rememberMeServices);
-		
-        return authcFilter;
-    }
-    
-    
     @Configuration
-	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
+    @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
+	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
     @Order(107)
-	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ApplicationEventPublisherAware {
+
+    	private ApplicationEventPublisher eventPublisher;
     	
-		private final JwtAuthorizationProvider authorizationProvider;
-		private final JwtAuthorizationProcessingFilter authorizationProcessingFilter;
-		private final UserDetailsService userDetailsService;
+    	private final AuthenticationManager authenticationManager;
+	    private final RememberMeServices rememberMeServices;
+	    
+		private final SecurityJwtAuthcProperties jwtAuthcProperties;
+    	private final SecurityJwtAuthzProperties jwtAuthzProperties;
+ 	    private final JwtAuthorizationProvider authorizationProvider;
+ 	    private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
+	    
+		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
 		
 		public JwtAuthzWebSecurityConfigurerAdapter(
-				ObjectProvider<UserDetailsService> userDetailsServiceProvider,
-				ObjectProvider<JwtAuthorizationProvider> authorizationProvider,
-				ObjectProvider<JwtAuthorizationProcessingFilter> authorizationProcessingFilterProvider) {
-			this.userDetailsService = userDetailsServiceProvider.getIfAvailable();
-			this.authorizationProvider = authorizationProvider.getIfAvailable();
-			this.authorizationProcessingFilter = authorizationProcessingFilterProvider.getIfAvailable();
+				
+				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
+   				ObjectProvider<ObjectMapper> objectMapperProvider,
+   				ObjectProvider<SessionRegistry> sessionRegistryProvider,
+   				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
+   				
+   				SecurityJwtAuthcProperties jwtAuthcProperties,
+   				SecurityJwtAuthzProperties jwtAuthzProperties,
+   				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
+   				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandler,
+   				
+   				@Qualifier("idcAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
+   				@Qualifier("idcCsrfTokenRepository") ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
+   				@Qualifier("idcInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+				@Qualifier("idcRequestCache") ObjectProvider<RequestCache> requestCacheProvider,
+				@Qualifier("idcSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
+				@Qualifier("idcSessionAuthenticationStrategy") ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
+				@Qualifier("idcExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider
+				
+				) {
+			
+			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
+   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
+   			
+   			this.jwtAuthcProperties = jwtAuthcProperties;
+   			this.jwtAuthzProperties = jwtAuthzProperties;
+   			
+   			this.authorizationProvider = authenticationProvider.getIfAvailable();
+   			this.authenticationFailureHandler = authenticationFailureHandler.getIfAvailable();
+   			
+   			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
+   			
 		}
 
+		@Bean
+	    public JwtAuthorizationProcessingFilter authorizationProcessingFilter() {
+	    	
+	    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter();
+			
+			authcFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
+			authcFilter.setApplicationEventPublisher(eventPublisher);
+			authcFilter.setAuthenticationFailureHandler(authenticationFailureHandler);
+			authcFilter.setAuthenticationManager(authenticationManager);
+			authcFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
+				public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+						Authentication authentication) throws IOException, ServletException {
+					// no-op - just allow filter chain to continue to token endpoint
+				}
+			});
+			authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
+			if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
+				authcFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
+			}
+			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPattern())) {
+				authcFilter.setLoginFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPattern());
+			}
+			authcFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
+			authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
+			authcFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
+			authcFilter.setRememberMeServices(rememberMeServices);
+			authcFilter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
+			
+	        return authcFilter;
+	    }
+		
 		@Override
 	    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-	        auth.authenticationProvider(authorizationProvider)
-	        	.userDetailsService(userDetailsService);
+	        auth.authenticationProvider(authorizationProvider);
 	    }
 
 	    @Override
 	    protected void configure(HttpSecurity http) throws Exception {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	http.addFilterBefore(authorizationProcessingFilter, UsernamePasswordAuthenticationFilter.class);
+	    	http.addFilterBefore(authorizationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
 
-	}
-   
-
-	@Override
-	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-		this.eventPublisher = applicationEventPublisher;
+		@Override
+		public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+			this.eventPublisher = applicationEventPublisher;
+		}
+		
 	}
 
 }

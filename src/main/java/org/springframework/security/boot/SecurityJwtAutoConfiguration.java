@@ -121,34 +121,36 @@ public class SecurityJwtAutoConfiguration {
 	static class JwtWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
     	private final SecurityJwtProperties jwtProperties;
-		private final InvalidSessionStrategy invalidSessionStrategy;
-		private final JwtAuthcOrAuthzFailureHandler authcOrAuthzFailureHandler;
+    	private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+    	private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
+
+    	private final InvalidSessionStrategy invalidSessionStrategy;
 		private final RequestCache requestCache;
 		private final SecurityContextLogoutHandler securityContextLogoutHandler;
 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
 		private final SessionRegistry sessionRegistry;
 		private final SessionInformationExpiredStrategy expiredSessionStrategy;
-		private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 		
 		public JwtWebSecurityConfigurerAdapter(
 				SecurityJwtProperties jwtProperties,
+				ObjectProvider<JwtAuthenticationEntryPoint> authenticationEntryPointProvider,
+				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandlerProvider, 
 				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
-				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authcOrAuthzFailureHandlerProvider, 
 				@Qualifier("jwtRequestCache") ObjectProvider<RequestCache> requestCacheProvider,
 				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
 				@Qualifier("jwtSessionAuthenticationStrategy") ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
-				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider,
-				ObjectProvider<JwtAuthenticationEntryPoint> authenticationEntryPointProvider) {
+				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider) {
 			this.jwtProperties = jwtProperties;
+			this.authenticationEntryPoint = authenticationEntryPointProvider.getIfAvailable();
+			this.authenticationFailureHandler = authenticationFailureHandlerProvider.getIfAvailable();
+
 			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
-			this.authcOrAuthzFailureHandler = authcOrAuthzFailureHandlerProvider.getIfAvailable();
 			this.requestCache = requestCacheProvider.getIfAvailable();
 			this.securityContextLogoutHandler = securityContextLogoutHandlerProvider.getIfAvailable();
 			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
 			this.sessionRegistry = sessionRegistryProvider.getIfAvailable();
 			this.expiredSessionStrategy = expiredSessionStrategyProvider.getIfAvailable();
-			this.authenticationEntryPoint = authenticationEntryPointProvider.getIfAvailable();
 		}
 
 	    @Override
@@ -177,7 +179,7 @@ public class SecurityJwtAutoConfiguration {
 				.sessionRegistry(sessionRegistry)
 				.and()
 	    		.sessionAuthenticationErrorUrl(sessionMgt.getFailureUrl())
-	    		.sessionAuthenticationFailureHandler(authcOrAuthzFailureHandler)
+	    		.sessionAuthenticationFailureHandler(authenticationFailureHandler)
 	    		.sessionAuthenticationStrategy(sessionAuthenticationStrategy)
 	    		.sessionCreationPolicy(sessionMgt.getCreationPolicy())
 	    		// Session 注销配置
