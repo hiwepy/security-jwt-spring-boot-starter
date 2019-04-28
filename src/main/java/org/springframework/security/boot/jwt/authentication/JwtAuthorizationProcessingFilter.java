@@ -19,16 +19,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -52,6 +58,9 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
 	private RequestMatcher ignoreRequestMatcher;
 	
+	private boolean continueChainBeforeSuccessfulAuthentication = false;
+	private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
+	
 	public JwtAuthorizationProcessingFilter(List<String> ignorePatterns) {
 		super(new AntPathRequestMatcher("/**"));
 		if(!CollectionUtils.isEmpty(ignorePatterns)) {
@@ -73,6 +82,70 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		return super.requiresAuthentication(request, response);
 	}
 
+	@Override
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+			throws IOException, ServletException {
+
+		HttpServletRequest request = (HttpServletRequest) req;
+		HttpServletResponse response = (HttpServletResponse) res;
+
+		if (!requiresAuthentication(request, response)) {
+			chain.doFilter(request, response);
+
+			return;
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("Request is to process authentication");
+		}
+
+		Authentication authResult;
+
+		try {
+			authResult = attemptAuthentication(request, response);
+			if (authResult == null) {
+				// return immediately as subclass has indicated that it hasn't completed
+				// authentication
+				return;
+			}
+			sessionStrategy.onAuthentication(authResult, request, response);
+		}
+		catch (InternalAuthenticationServiceException failed) {
+			logger.error(
+					"An internal error occurred while trying to authenticate the user.",
+					failed);
+			unsuccessfulAuthentication(request, response, failed);
+
+			return;
+		}
+		catch (AuthenticationException failed) {
+			// Authentication failed
+			unsuccessfulAuthentication(request, response, failed);
+
+			return;
+		}
+		
+		successfulAuthentication(request, response, chain, authResult);
+		
+		// Authentication success
+		if (continueChainBeforeSuccessfulAuthentication) {
+			chain.doFilter(request, response);
+		}
+	}
+	
+	@Override
+	public void setSessionAuthenticationStrategy(
+			SessionAuthenticationStrategy sessionStrategy) {
+		super.setSessionAuthenticationStrategy(sessionStrategy);
+		this.sessionStrategy = sessionStrategy;
+	}
+	
+	@Override
+	public void setContinueChainBeforeSuccessfulAuthentication(boolean continueChainBeforeSuccessfulAuthentication) {
+		super.setContinueChainBeforeSuccessfulAuthentication(continueChainBeforeSuccessfulAuthentication);
+		this.continueChainBeforeSuccessfulAuthentication = continueChainBeforeSuccessfulAuthentication;
+	}
+	
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
