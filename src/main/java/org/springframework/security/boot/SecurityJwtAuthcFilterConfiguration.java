@@ -105,7 +105,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@Configuration
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
-    @Order(107)
+    @Order(106)
 	static class JwtAuthcWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ApplicationEventPublisherAware {
 
     	private ApplicationEventPublisher eventPublisher;
