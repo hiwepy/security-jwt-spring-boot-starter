@@ -11,7 +11,8 @@ import org.springframework.security.boot.biz.property.SecuritySessionMgtProperti
 public class SecurityJwtProperties {
 
 	public static final String PREFIX = "spring.security.jwt";
-	
+	/** Whether Enable JWT . */
+	private boolean enabled = false;
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
 	@NestedConfigurationProperty
@@ -23,6 +24,14 @@ public class SecurityJwtProperties {
 	private String invalidSessionUrl = "/";
 	private boolean useForward = false;
 	
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
 	public SecurityCaptchaProperties getCaptcha() {
 		return captcha;
 	}
