@@ -17,7 +17,7 @@ package org.springframework.security.boot.jwt.authentication;
 
 import java.util.Collection;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
 /**
@@ -25,33 +25,74 @@ import org.springframework.security.core.GrantedAuthority;
  * @author ： <a href="https://github.com/vindell">vindell</a>
  */
 @SuppressWarnings("serial")
-public class JwtAuthenticationToken extends UsernamePasswordAuthenticationToken {
+public class JwtAuthenticationToken extends AbstractAuthenticationToken {
+
+	
+	
+	// ~ Instance fields
+	// ================================================================================================
+
+	private final Object principal;
+	private Object credentials;
+
+	// ~ Constructors
+	// ===================================================================================================
 
 	/**
 	 * This constructor can be safely used by any code that wishes to create a
 	 * <code>JwtAuthenticationToken</code>, as the {@link #isAuthenticated()}
 	 * will return <code>false</code>.
-	 * @param principal The principal
-	 * @param credentials The credentials
-	 * 
+	 *
 	 */
 	public JwtAuthenticationToken(Object principal, Object credentials) {
-		super(principal, credentials);
+		super(null);
+		this.principal = principal;
+		this.credentials = credentials;
+		setAuthenticated(false);
 	}
-	
+
 	/**
 	 * This constructor should only be used by <code>AuthenticationManager</code> or
 	 * <code>AuthenticationProvider</code> implementations that are satisfied with
 	 * producing a trusted (i.e. {@link #isAuthenticated()} = <code>true</code>)
 	 * authentication token.
 	 *
-	 * @param principal The principal
-	 * @param credentials The credentials
-	 * @param authorities The authorities
+	 * @param principal
+	 * @param credentials
+	 * @param authorities
 	 */
 	public JwtAuthenticationToken(Object principal, Object credentials,
 			Collection<? extends GrantedAuthority> authorities) {
-		super(principal, credentials, authorities);
+		super(authorities);
+		this.principal = principal;
+		this.credentials = credentials;
+		super.setAuthenticated(true); // must use super, as we override
+	}
+
+	// ~ Methods
+	// ========================================================================================================
+
+	public Object getCredentials() {
+		return this.credentials;
+	}
+
+	public Object getPrincipal() {
+		return this.principal;
+	}
+
+	public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+		if (isAuthenticated) {
+			throw new IllegalArgumentException(
+					"Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
+		}
+
+		super.setAuthenticated(false);
+	}
+
+	@Override
+	public void eraseCredentials() {
+		super.eraseCredentials();
+		credentials = null;
 	}
 
 }
