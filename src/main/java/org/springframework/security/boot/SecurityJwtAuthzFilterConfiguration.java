@@ -1,6 +1,10 @@
 package org.springframework.security.boot;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -20,10 +24,10 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
+import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -40,23 +44,24 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
 @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
+@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
 public class SecurityJwtAuthzFilterConfiguration {
 
 	@Bean
-	public JwtAuthorizationProvider jwtAuthorizationProvider(AuthcUserDetailsService userDetailsService) {
-		return new JwtAuthorizationProvider(userDetailsService);
+	public JwtAuthorizationProvider jwtAuthorizationProvider(JwtPayloadRepository payloadRepository) {
+		return new JwtAuthorizationProvider(payloadRepository);
 	}
     
     @Configuration
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
-	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
+	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
     @Order(107)
 	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ApplicationEventPublisherAware {
 
@@ -65,6 +70,8 @@ public class SecurityJwtAuthzFilterConfiguration {
     	private final AuthenticationManager authenticationManager;
 	    private final RememberMeServices rememberMeServices;
 	    
+		private final SecurityBizProperties bizProperties;
+		private final SecurityJwtAuthcProperties jwtAuthcProperties;
     	private final SecurityJwtAuthzProperties jwtAuthzProperties;
  	    private final JwtAuthorizationProvider authorizationProvider;
  	    private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
@@ -78,6 +85,8 @@ public class SecurityJwtAuthzFilterConfiguration {
    				ObjectProvider<SessionRegistry> sessionRegistryProvider,
    				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
    				
+   				SecurityBizProperties bizProperties,
+   				SecurityJwtAuthcProperties jwtAuthcProperties,
    				SecurityJwtAuthzProperties jwtAuthzProperties,
    				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
    				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandler,
@@ -95,6 +104,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			
+   			this.bizProperties = bizProperties;
+   			this.jwtAuthcProperties = jwtAuthcProperties;
    			this.jwtAuthzProperties = jwtAuthzProperties;
    			
    			this.authorizationProvider = authenticationProvider.getIfAvailable();
@@ -107,7 +118,22 @@ public class SecurityJwtAuthzFilterConfiguration {
 		@Bean
 	    public JwtAuthorizationProcessingFilter authorizationProcessingFilter() {
 	    	
-	    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter(jwtAuthzProperties.getIgnorePatterns());
+			// 对过滤链按过滤器名称进行分组
+			List<Entry<String, String>> noneEntries = bizProperties.getFilterChainDefinitionMap().entrySet().stream()
+					.filter(predicate -> {
+						return "anon".equalsIgnoreCase(predicate.getValue());
+					}).collect(Collectors.toList());
+   			
+   			List<String> ignorePatterns = new ArrayList<String>();
+   			if (!CollectionUtils.isEmpty(noneEntries)) {
+   				ignorePatterns = noneEntries.stream().map(mapper -> {
+   					return mapper.getKey();
+   				}).collect(Collectors.toList());
+   			}
+   			// 登录地址不拦截 
+   			ignorePatterns.add(jwtAuthcProperties.getLoginUrlPatterns());
+			
+	    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter(ignorePatterns);
 			
 			authcFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
 			authcFilter.setApplicationEventPublisher(eventPublisher);
@@ -149,7 +175,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    @Override
    	    public void configure(WebSecurity web) throws Exception {
    	    	web.ignoring()
-   	    		.antMatchers(jwtAuthzProperties.getIgnorePatterns())
+   	    		.antMatchers(jwtAuthzProperties.getPathPattern())
    	    		.antMatchers(HttpMethod.OPTIONS, "/**");
    	    }
 

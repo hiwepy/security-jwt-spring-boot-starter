@@ -1,20 +1,28 @@
 package org.springframework.security.boot.jwt.authentication;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
-import org.springframework.security.boot.jwt.userdetails.JwtUserDetails;
+import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
+import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
+
+import com.github.vindell.jwt.JwtPayload;
 
 /**
  * 
@@ -25,11 +33,12 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 	
 	protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final AuthcUserDetailsService authcUserDetailsService;
+	private final JwtPayloadRepository payloadRepository;
     private UserDetailsChecker userDetailsChecker = new AccountStatusUserDetailsChecker();
+    private boolean checkExpiry = true;
     
-    public JwtAuthorizationProvider(final AuthcUserDetailsService authcUserDetailsService) {
-        this.authcUserDetailsService = authcUserDetailsService;
+    public JwtAuthorizationProvider(final JwtPayloadRepository payloadRepository) {
+        this.payloadRepository = payloadRepository;
     }
 
     /**
@@ -55,18 +64,42 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 			logger.debug("No principal found in request.");
 			throw new BadCredentialsException("No principal found in request.");
 		}
-        
-		JwtUserDetails ud = (JwtUserDetails) getAuthcUserDetailsService().loadUserDetails(authentication);
+		JwtAuthorizationToken jwtToken = (JwtAuthorizationToken) authentication;
+		
+		// 解析Token载体信息
+		JwtPayload payload = getPayloadRepository().getPayload(jwtToken, checkExpiry);
+		
+		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
+		
+		// 用户角色ID集合
+   		List<String> roles = Arrays.asList(StringUtils.tokenizeToStringArray(payload.getRoles()));
+   		for (String role : roles) {
+   			//角色必须是ROLE_开头，可以在数据库中设置
+            GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(StringUtils.startsWithIgnoreCase(role, "ROLE_") ?
+            		role : "ROLE_"+role);
+            grantedAuthorities.add(grantedAuthority);
+		}
+   		
+   		// 用户权限标记集合
+   		List<String> perms = Arrays.asList(StringUtils.tokenizeToStringArray(payload.getPerms()));
+		for (String perm : perms ) {
+			GrantedAuthority authority = new SimpleGrantedAuthority(perm);
+            grantedAuthorities.add(authority);
+		}
+		
+		SecurityPrincipal principal = new SecurityPrincipal(payload.getClientId(), payload.getTokenId(), payload.isEnabled(),
+				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
+				grantedAuthorities);
+		
+		principal.setUserid(payload.getClientId());
+		principal.setAlias(payload.getAlias());
+		principal.setPerms(new HashSet<String>());
+		principal.setRoles(new HashSet<String>(roles));
         
         // User Status Check
-        getUserDetailsChecker().check(ud);
+        getUserDetailsChecker().check(principal);
         
-        JwtAuthorizationToken authenticationToken = null;
-        if(SecurityPrincipal.class.isAssignableFrom(ud.getClass())) {
-        	authenticationToken = new JwtAuthorizationToken(ud, ud.getPayload(), ud.getAuthorities());        	
-        } else {
-        	authenticationToken = new JwtAuthorizationToken(ud.getUsername(), ud.getPayload(), ud.getAuthorities());
-		}
+        JwtAuthorizationToken authenticationToken = new JwtAuthorizationToken(principal, payload, principal.getAuthorities());        	
         authenticationToken.setDetails(authentication.getDetails());
         
         return authenticationToken;
@@ -85,8 +118,16 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		return userDetailsChecker;
 	}
 
-	public AuthcUserDetailsService getAuthcUserDetailsService() {
-		return authcUserDetailsService;
+	public JwtPayloadRepository getPayloadRepository() {
+		return payloadRepository;
+	}
+
+	public boolean isCheckExpiry() {
+		return checkExpiry;
+	}
+
+	public void setCheckExpiry(boolean checkExpiry) {
+		this.checkExpiry = checkExpiry;
 	}
     
 }

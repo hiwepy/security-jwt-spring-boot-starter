@@ -24,7 +24,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
@@ -33,6 +32,7 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Jwt授权 (authorization)过滤器
@@ -52,9 +52,9 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
 	private RequestMatcher ignoreRequestMatcher;
 	
-	public JwtAuthorizationProcessingFilter(String... ignorePatterns) {
+	public JwtAuthorizationProcessingFilter(List<String> ignorePatterns) {
 		super(new AntPathRequestMatcher("/**"));
-		if(ArrayUtils.isNotEmpty(ignorePatterns)) {
+		if(!CollectionUtils.isEmpty(ignorePatterns)) {
 			List<RequestMatcher> ignoreRequestMatchers = new ArrayList<>();
 			for (String pattern : ignorePatterns) {
 				ignoreRequestMatchers.add(new AntPathRequestMatcher(pattern));

@@ -34,7 +34,6 @@ spring:
         enabled: true        allow-session-creation: false
         continue-chain-before-successful-authentication: true
         path-pattern: /**
-        
       
       
       
