@@ -9,7 +9,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.exception.AuthMethodNotSupportedException;
 import org.springframework.security.boot.biz.exception.AuthenticationCaptchaIncorrectException;
@@ -72,6 +75,12 @@ public class JwtAuthcOrAuthzFailureHandler extends ExceptionMappingAuthenticatio
 			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.CAPTCHA, HttpStatus.UNAUTHORIZED));
 		}  else if (e instanceof AuthenticationCaptchaIncorrectException) {
 			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.CAPTCHA, HttpStatus.UNAUTHORIZED));
+		}  else if (e instanceof LockedException) {
+			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+		}  else if (e instanceof AccountExpiredException) {
+			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+		}  else if (e instanceof CredentialsExpiredException) {
+			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
 		} else if (e instanceof JwtIncorrectException) {
 			JSONObject.writeJSONString(response.getWriter(), ErrorResponse.of("JWT was incorrect", ErrorCode.TOKEN, HttpStatus.UNAUTHORIZED));
 		} else if (e instanceof JwtExpiredException) {
