@@ -161,7 +161,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 
 
 	    @Bean
-		public JwtAuthenticationProcessingFilter authenticationProcessingFilter() throws Exception {
+		public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() throws Exception {
 	    	
 	        JwtAuthenticationProcessingFilter authcFilter = new JwtAuthenticationProcessingFilter(objectMapper);
 	        
@@ -204,7 +204,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    @Override
 	    protected void configure(HttpSecurity http) throws Exception {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	http.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+	    	http.addFilterBefore(jwtAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
 	    
 	    @Override

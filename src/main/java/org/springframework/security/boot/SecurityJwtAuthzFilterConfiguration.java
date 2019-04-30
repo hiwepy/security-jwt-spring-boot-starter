@@ -116,7 +116,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 		}
 
 		@Bean
-	    public JwtAuthorizationProcessingFilter authorizationProcessingFilter() {
+	    public JwtAuthorizationProcessingFilter jwtAuthorizationProcessingFilter() {
 	    	
 			// 对过滤链按过滤器名称进行分组
 			List<Entry<String, String>> noneEntries = bizProperties.getFilterChainDefinitionMap().entrySet().stream()
@@ -169,7 +169,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    	// 禁用缓存
 	    	http.headers().cacheControl();
 	    	// 添加JWT filter
-	    	http.addFilterBefore(authorizationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+	    	http.addFilterBefore(jwtAuthorizationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
 	    
 	    @Override
