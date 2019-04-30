@@ -21,7 +21,7 @@ import org.springframework.security.boot.biz.authentication.AuthenticatingFailur
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
 import org.springframework.security.boot.biz.authentication.captcha.NullCaptchaResolver;
-import org.springframework.security.boot.biz.userdetails.AuthcUserDetailsService;
+import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
@@ -92,7 +92,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	}
 	
 	@Bean
-	public JwtAuthenticationProvider jwtAuthenticationProvider(AuthcUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+	public JwtAuthenticationProvider jwtAuthenticationProvider(UserDetailsServiceAdapter userDetailsService, PasswordEncoder passwordEncoder) {
 		return new JwtAuthenticationProvider(userDetailsService, passwordEncoder);
 	}
     
@@ -129,10 +129,8 @@ public class SecurityJwtAuthcFilterConfiguration {
 				
 				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
-   				ObjectProvider<PasswordEncoder> passwordEncoderProvider,
    				ObjectProvider<SessionRegistry> sessionRegistryProvider,
    				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
-   				ObjectProvider<AuthcUserDetailsService> userDetailsServiceProvider,
    				
    				SecurityJwtProperties jwtProperties,
    				SecurityJwtAuthcProperties jwtAuthcProperties,
