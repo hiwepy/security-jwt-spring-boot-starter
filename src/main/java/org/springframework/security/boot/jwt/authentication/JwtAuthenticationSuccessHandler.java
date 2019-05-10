@@ -49,8 +49,8 @@ public class JwtAuthenticationSuccessHandler implements AuthenticationSuccessHan
     	UserDetails userDetails = (UserDetails) authentication.getPrincipal();
     	
 		Map<String, Object> tokenMap = new HashMap<String, Object>();
+		tokenMap.put("code", "0");
 		tokenMap.put("perms", userDetails.getAuthorities());
-		tokenMap.put("status", "1");
 		tokenMap.put("token", getPayloadRepository().issueJwt((JwtAuthenticationToken) authentication));
 		tokenMap.put("username", userDetails.getUsername());
 
