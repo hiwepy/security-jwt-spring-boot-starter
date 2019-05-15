@@ -1,14 +1,14 @@
 package org.springframework.security.boot.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
-
+@SuppressWarnings("serial")
 public class JwtIncorrectException extends AuthenticationException {
 
 	// ~ Constructors
 	// ===================================================================================================
 
 	/**
-	 * Constructs an <code>AuthTokenIncorrectException</code> with the specified
+	 * Constructs an <code>JwtIncorrectException</code> with the specified
 	 * message.
 	 *
 	 * @param msg the detail message
@@ -18,7 +18,7 @@ public class JwtIncorrectException extends AuthenticationException {
 	}
 
 	/**
-	 * Constructs an <code>AuthTokenIncorrectException</code> with the specified
+	 * Constructs an <code>JwtIncorrectException</code> with the specified
 	 * message and root cause.
 	 *
 	 * @param msg the detail message
