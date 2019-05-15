@@ -9,7 +9,7 @@ public class AuthenticationJwtExpiredException extends AuthenticationException {
 	// ===================================================================================================
 
 	/**
-	 * Constructs an <code>JwtExpiredException</code> with the specified
+	 * Constructs an <code>AuthenticationJwtExpiredException</code> with the specified
 	 * message.
 	 *
 	 * @param msg the detail message
@@ -19,7 +19,7 @@ public class AuthenticationJwtExpiredException extends AuthenticationException {
 	}
 
 	/**
-	 * Constructs an <code>JwtExpiredException</code> with the specified
+	 * Constructs an <code>AuthenticationJwtExpiredException</code> with the specified
 	 * message and root cause.
 	 *
 	 * @param msg the detail message

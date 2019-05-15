@@ -8,7 +8,7 @@ public class AuthenticationJwtIncorrectException extends AuthenticationException
 	// ===================================================================================================
 
 	/**
-	 * Constructs an <code>JwtIncorrectException</code> with the specified
+	 * Constructs an <code>AuthenticationJwtIncorrectException</code> with the specified
 	 * message.
 	 *
 	 * @param msg the detail message
@@ -18,7 +18,7 @@ public class AuthenticationJwtIncorrectException extends AuthenticationException
 	}
 
 	/**
-	 * Constructs an <code>JwtIncorrectException</code> with the specified
+	 * Constructs an <code>AuthenticationJwtIncorrectException</code> with the specified
 	 * message and root cause.
 	 *
 	 * @param msg the detail message

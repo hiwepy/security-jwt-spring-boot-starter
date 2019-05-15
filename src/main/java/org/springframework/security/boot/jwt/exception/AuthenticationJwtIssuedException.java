@@ -1,30 +1,31 @@
 package org.springframework.security.boot.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
+
 @SuppressWarnings("serial")
-public class AuthenticationJwtNotFoundException extends AuthenticationException {
+public class AuthenticationJwtIssuedException extends AuthenticationException {
 
 	// ~ Constructors
 	// ===================================================================================================
 
 	/**
-	 * Constructs an <code>AuthenticationJwtNotFoundException</code> with the specified
+	 * Constructs an <code>AuthenticationJwtIssuedException</code> with the specified
 	 * message.
 	 *
 	 * @param msg the detail message
 	 */
-	public AuthenticationJwtNotFoundException(String msg) {
+	public AuthenticationJwtIssuedException(String msg) {
 		super(msg);
 	}
 
 	/**
-	 * Constructs an <code>AuthenticationJwtNotFoundException</code> with the specified
+	 * Constructs an <code>AuthenticationJwtIssuedException</code> with the specified
 	 * message and root cause.
 	 *
 	 * @param msg the detail message
 	 * @param t   root cause
 	 */
-	public AuthenticationJwtNotFoundException(String msg, Throwable t) {
+	public AuthenticationJwtIssuedException(String msg, Throwable t) {
 		super(msg, t);
 	}
 
