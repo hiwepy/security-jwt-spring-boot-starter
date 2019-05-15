@@ -19,10 +19,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
+import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
+import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
 import org.springframework.security.boot.biz.authentication.captcha.NullCaptchaResolver;
 import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
-import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
@@ -118,8 +119,8 @@ public class SecurityJwtAuthcFilterConfiguration {
 		private final SecurityJwtProperties jwtProperties;
 		private final SecurityJwtAuthcProperties jwtAuthcProperties;
  	    private final JwtAuthenticationProvider authenticationProvider;
- 	    private final JwtAuthenticationSuccessHandler authenticationSuccessHandler;
- 	    private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
+ 	    private final PostRequestAuthenticationSuccessHandler authenticationSuccessHandler;
+	    private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
  	    private final CaptchaResolver captchaResolver;
 
 		private final AuthenticatingFailureCounter authenticatingFailureCounter;
@@ -135,8 +136,9 @@ public class SecurityJwtAuthcFilterConfiguration {
    				SecurityJwtProperties jwtProperties,
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				ObjectProvider<JwtAuthenticationProvider> authenticationProvider,
-   				ObjectProvider<JwtAuthenticationSuccessHandler> authenticationSuccessHandler,
-   				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandler,
+   				
+   				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
+   				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				
    				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,

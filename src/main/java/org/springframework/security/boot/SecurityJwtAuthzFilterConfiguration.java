@@ -24,7 +24,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
+import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
 import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
@@ -74,7 +74,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 		private final SecurityJwtAuthcProperties jwtAuthcProperties;
     	private final SecurityJwtAuthzProperties jwtAuthzProperties;
  	    private final JwtAuthorizationProvider authorizationProvider;
- 	    private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
+	    private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
 	    
 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
 		
@@ -89,7 +89,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				SecurityJwtAuthzProperties jwtAuthzProperties,
    				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
-   				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandler,
+   				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
    				
    				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
    				@Qualifier("jwtCsrfTokenRepository") ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,

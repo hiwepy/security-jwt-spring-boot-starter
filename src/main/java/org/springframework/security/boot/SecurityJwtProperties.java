@@ -2,6 +2,7 @@ package org.springframework.security.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecurityRedirectProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
@@ -14,6 +15,8 @@ public class SecurityJwtProperties {
 	private boolean enabled = false;
 	
 	@NestedConfigurationProperty
+	private SecurityAuthcProperties authc = new SecurityAuthcProperties();
+	@NestedConfigurationProperty
 	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
 	@NestedConfigurationProperty
 	private SecurityRedirectProperties redirect = new SecurityRedirectProperties();
@@ -22,6 +25,14 @@ public class SecurityJwtProperties {
 	private String invalidSessionUrl = "/";
 	private boolean useForward = false;
 	
+	public SecurityAuthcProperties getAuthc() {
+		return authc;
+	}
+
+	public void setAuthc(SecurityAuthcProperties authc) {
+		this.authc = authc;
+	}
+
 	public boolean isEnabled() {
 		return enabled;
 	}

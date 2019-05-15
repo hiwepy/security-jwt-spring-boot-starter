@@ -11,12 +11,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
+import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
+import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
+import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationFailureHandler;
+import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.property.SessionFixationPolicy;
-import org.springframework.security.boot.jwt.authentication.JwtAuthcOrAuthzFailureHandler;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationEntryPoint;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
+import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
@@ -97,22 +100,34 @@ public class SecurityJwtAutoConfiguration {
 		return logoutHandler;
 	}
 
-	@Bean
-	public JwtAuthcOrAuthzFailureHandler jwtAuthcOrAuthzFailureHandler(@Autowired(required = false) List<AuthenticationListener> authenticationListeners) {
-		JwtAuthcOrAuthzFailureHandler failureHandler = new JwtAuthcOrAuthzFailureHandler(
-				authenticationListeners);
-		failureHandler.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
-		failureHandler.setRedirectStrategy(jwtRedirectStrategy());
-		failureHandler.setUseForward(jwtProperties.isUseForward());
+	@Bean("jwtAuthenticationSuccessHandler")
+	public PostRequestAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(
+			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
+			@Autowired(required = false) List<MatchedAuthenticationSuccessHandler> successHandlers) {
+		return new PostRequestAuthenticationSuccessHandler(authenticationListeners, successHandlers, jwtProperties.getAuthc().getLoginUrl());
+	}
+	
+	@Bean("jwtAuthenticationFailureHandler")
+	public PostRequestAuthenticationFailureHandler jwtAuthenticationFailureHandler(
+			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
+			@Autowired(required = false) List<MatchedAuthenticationFailureHandler> failureHandlers, 
+			@Qualifier("jwtRedirectStrategy") RedirectStrategy redirectStrategy) {
+		PostRequestAuthenticationFailureHandler failureHandler = new PostRequestAuthenticationFailureHandler(
+				authenticationListeners, failureHandlers, jwtProperties.getAuthc().getFailureUrl());
+		failureHandler.setAllowSessionCreation(jwtProperties.getAuthc().isAllowSessionCreation());
+		failureHandler.setRedirectStrategy(redirectStrategy);
+		failureHandler.setUseForward(jwtProperties.getAuthc().isUseForward());
 		return failureHandler;
 	}
 	
 	@Bean
-	public JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint() {
-
-		JwtAuthenticationEntryPoint entryPoint = new JwtAuthenticationEntryPoint();
-		
-		return entryPoint;
+	public JwtMatchedAuthcOrAuthzFailureHandler jwtMatchedAuthcOrAuthzFailureHandler() {
+		return new JwtMatchedAuthcOrAuthzFailureHandler();
+	}
+	
+	@Bean
+	public JwtMatchedAuthenticationEntryPoint jwtMatchedAuthenticationEntryPoint() {
+		return new JwtMatchedAuthenticationEntryPoint();
 	}
     
     @Configuration
@@ -121,9 +136,7 @@ public class SecurityJwtAutoConfiguration {
 	static class JwtWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
     	private final SecurityJwtProperties jwtProperties;
-    	private final JwtAuthenticationEntryPoint authenticationEntryPoint;
-    	private final JwtAuthcOrAuthzFailureHandler authenticationFailureHandler;
-
+    	private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
     	private final InvalidSessionStrategy invalidSessionStrategy;
 		private final RequestCache requestCache;
 		private final SecurityContextLogoutHandler securityContextLogoutHandler;
@@ -133,8 +146,7 @@ public class SecurityJwtAutoConfiguration {
 		
 		public JwtWebSecurityConfigurerAdapter(
 				SecurityJwtProperties jwtProperties,
-				ObjectProvider<JwtAuthenticationEntryPoint> authenticationEntryPointProvider,
-				ObjectProvider<JwtAuthcOrAuthzFailureHandler> authenticationFailureHandlerProvider, 
+				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandlerProvider,
 				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
 				@Qualifier("jwtRequestCache") ObjectProvider<RequestCache> requestCacheProvider,
 				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
@@ -142,7 +154,6 @@ public class SecurityJwtAutoConfiguration {
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
 				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider) {
 			this.jwtProperties = jwtProperties;
-			this.authenticationEntryPoint = authenticationEntryPointProvider.getIfAvailable();
 			this.authenticationFailureHandler = authenticationFailureHandlerProvider.getIfAvailable();
 
 			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
@@ -153,10 +164,6 @@ public class SecurityJwtAutoConfiguration {
 			this.expiredSessionStrategy = expiredSessionStrategyProvider.getIfAvailable();
 		}
 
-	    @Override
-	    protected void configure(AuthenticationManagerBuilder auth) {
-	    }
-		
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 			
@@ -191,8 +198,6 @@ public class SecurityJwtAutoConfiguration {
 	        	.and()
 	    		.requestCache()
 	        	.requestCache(requestCache);
-	        
-	        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
 			
 		}
 
