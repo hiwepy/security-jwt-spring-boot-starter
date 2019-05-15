@@ -33,10 +33,11 @@ public class JwtMatchedAuthcOrAuthzFailureHandler implements MatchedAuthenticati
 	
 	@Override
 	public boolean supports(AuthenticationException e) {
-		return SubjectUtils.supports(e.getClass(), AuthenticationJwtIncorrectException.class,
-				AuthenticationJwtInvalidException.class, AuthenticationJwtExpiredException.class);
+		return SubjectUtils.supports(e.getClass(), AuthenticationJwtIssuedException.class,
+				AuthenticationJwtNotFoundException.class, AuthenticationJwtExpiredException.class,
+				AuthenticationJwtInvalidException.class, AuthenticationJwtIncorrectException.class);
 	}
-	
+
 	@Override
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException e) throws IOException, ServletException {
