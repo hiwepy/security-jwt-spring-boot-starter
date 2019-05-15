@@ -2,7 +2,7 @@ package org.springframework.security.boot.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
 @SuppressWarnings("serial")
-public class JwtIncorrectException extends AuthenticationException {
+public class AuthenticationJwtIncorrectException extends AuthenticationException {
 
 	// ~ Constructors
 	// ===================================================================================================
@@ -13,7 +13,7 @@ public class JwtIncorrectException extends AuthenticationException {
 	 *
 	 * @param msg the detail message
 	 */
-	public JwtIncorrectException(String msg) {
+	public AuthenticationJwtIncorrectException(String msg) {
 		super(msg);
 	}
 
@@ -24,7 +24,7 @@ public class JwtIncorrectException extends AuthenticationException {
 	 * @param msg the detail message
 	 * @param t   root cause
 	 */
-	public JwtIncorrectException(String msg, Throwable t) {
+	public AuthenticationJwtIncorrectException(String msg, Throwable t) {
 		super(msg, t);
 	}
 }

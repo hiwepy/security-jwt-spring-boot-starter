@@ -38,8 +38,8 @@ import org.springframework.security.boot.biz.exception.AuthenticationMethodNotSu
 import org.springframework.security.boot.biz.exception.AuthenticationTokenExpiredException;
 import org.springframework.security.boot.biz.exception.AuthenticationTokenIncorrectException;
 import org.springframework.security.boot.biz.exception.AuthenticationTokenNotFoundException;
-import org.springframework.security.boot.jwt.exception.JwtExpiredException;
-import org.springframework.security.boot.jwt.exception.JwtIncorrectException;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtIncorrectException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -83,10 +83,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getCode(), e.getMessage()));
 		} else if (e instanceof AuthenticationTokenExpiredException) {
 			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getCode(), e.getMessage()));
-		} else if (e instanceof JwtIncorrectException) {
+		} else if (e instanceof AuthenticationJwtIncorrectException) {
 			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getCode(), 
 					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getMsgKey(), e.getMessage())));
-		} else if (e instanceof JwtExpiredException) {
+		} else if (e instanceof AuthenticationJwtExpiredException) {
 			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getCode(), 
 					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getMsgKey(), e.getMessage())));
 		}  else if (e instanceof DisabledException) {
