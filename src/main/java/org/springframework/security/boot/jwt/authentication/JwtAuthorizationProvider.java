@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
@@ -59,11 +59,12 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		}
  
         String token = (String) authentication.getPrincipal();
-        
-		if (!StringUtils.hasLength(token)) {
-			logger.debug("No principal found in request.");
-			throw new BadCredentialsException("No principal found in request.");
+
+		if (!StringUtils.hasText(token)) {
+			logger.debug("No JWT found in request.");
+			throw new AuthenticationJwtNotFoundException("No JWT found in request.");
 		}
+		
 		JwtAuthorizationToken jwtToken = (JwtAuthorizationToken) authentication;
 		
 		// 解析Token载体信息
