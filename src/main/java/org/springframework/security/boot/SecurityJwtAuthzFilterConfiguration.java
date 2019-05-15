@@ -133,29 +133,29 @@ public class SecurityJwtAuthzFilterConfiguration {
    			// 登录地址不拦截 
    			ignorePatterns.add(jwtAuthcProperties.getLoginUrlPatterns());
 			
-	    	JwtAuthorizationProcessingFilter authcFilter = new JwtAuthorizationProcessingFilter(ignorePatterns);
+	    	JwtAuthorizationProcessingFilter authzFilter = new JwtAuthorizationProcessingFilter(ignorePatterns);
 			
-			authcFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
-			authcFilter.setApplicationEventPublisher(eventPublisher);
-			authcFilter.setAuthenticationFailureHandler(authenticationFailureHandler);
-			authcFilter.setAuthenticationManager(authenticationManager);
-			authcFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
+			authzFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
+			authzFilter.setApplicationEventPublisher(eventPublisher);
+			authzFilter.setAuthenticationFailureHandler(authenticationFailureHandler);
+			authzFilter.setAuthenticationManager(authenticationManager);
+			authzFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
 				public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
 						Authentication authentication) throws IOException, ServletException {
 					// no-op - just allow filter chain to continue to token endpoint
 				}
 			});
-			authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
+			authzFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
 			if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
-				authcFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
+				authzFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
 			}
-			authcFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
-			authcFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
-			authcFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
-			authcFilter.setRememberMeServices(rememberMeServices);
-			authcFilter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
+			authzFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
+			authzFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
+			authzFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
+			authzFilter.setRememberMeServices(rememberMeServices);
+			authzFilter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
 			
-	        return authcFilter;
+	        return authzFilter;
 	    }
 		
 		@Override

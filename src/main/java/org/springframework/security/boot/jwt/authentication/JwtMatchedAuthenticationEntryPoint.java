@@ -31,6 +31,8 @@ import org.springframework.security.boot.biz.exception.AuthResponseCode;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtIncorrectException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtInvalidException;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtIssuedException;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.AuthenticationException;
 
@@ -57,18 +59,25 @@ public class JwtMatchedAuthenticationEntryPoint implements MatchedAuthentication
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 		
-			
-		if (e instanceof AuthenticationJwtIncorrectException) {
-			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getCode(), 
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getMsgKey(), e.getMessage())));
+		if (e instanceof AuthenticationJwtNotFoundException) {
+			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_REQUIRED.getCode(), 
+					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_REQUIRED.getMsgKey(), e.getMessage())));
+		} else if (e instanceof AuthenticationJwtIssuedException) {
+			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_ISSUED.getCode(), 
+					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_ISSUED.getMsgKey(), e.getMessage())));
 		} else if (e instanceof AuthenticationJwtExpiredException) {
 			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getCode(), 
 					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getMsgKey(), e.getMessage())));
+		} else if (e instanceof AuthenticationJwtInvalidException) {
+			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INVALID.getCode(), 
+					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_INVALID.getMsgKey(), e.getMessage())));
+		} else if (e instanceof AuthenticationJwtIncorrectException) {
+			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getCode(), 
+					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getMsgKey(), e.getMessage())));
 		}  
-		
 		else {
-			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHC_FAIL.getCode(),
-					messages.getMessage(AuthResponseCode.SC_AUTHC_FAIL.getMsgKey())));
+			JSONObject.writeJSONString(response.getWriter(), AuthResponse.of(AuthResponseCode.SC_AUTHZ_FAIL.getCode(),
+					messages.getMessage(AuthResponseCode.SC_AUTHZ_FAIL.getMsgKey())));
 		}
 	}
 

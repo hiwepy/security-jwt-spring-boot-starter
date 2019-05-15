@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -157,7 +158,11 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		}
 
 		token = token.trim();
-
+		
+		if(!StringUtils.hasText(token)) {
+			throw new AuthenticationJwtNotFoundException("JWT not provided");
+		}
+		
 		AbstractAuthenticationToken authRequest = new JwtAuthorizationToken(token);
 
 		// Allow subclasses to set the "details" property
