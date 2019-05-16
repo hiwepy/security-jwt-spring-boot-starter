@@ -39,9 +39,11 @@ import org.springframework.security.web.session.SimpleRedirectSessionInformation
 
 @Configuration
 @AutoConfigureBefore(SecurityBizAutoConfiguration.class)
-@EnableConfigurationProperties({ SecurityJwtProperties.class })
+@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class })
 public class SecurityJwtAutoConfiguration {
-
+	
+	@Autowired
+	private SecurityBizProperties bizProperties;
 	@Autowired
 	private SecurityJwtProperties jwtProperties;
 	
@@ -104,7 +106,16 @@ public class SecurityJwtAutoConfiguration {
 	public PostRequestAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
 			@Autowired(required = false) List<MatchedAuthenticationSuccessHandler> successHandlers) {
-		return new PostRequestAuthenticationSuccessHandler(authenticationListeners, successHandlers, jwtProperties.getAuthc().getLoginUrl());
+		
+		PostRequestAuthenticationSuccessHandler successHandler = new PostRequestAuthenticationSuccessHandler(
+				authenticationListeners, successHandlers);
+		
+		successHandler.setDefaultTargetUrl(jwtProperties.getAuthc().getSuccessUrl());
+		successHandler.setStateless(bizProperties.isStateless());
+		successHandler.setTargetUrlParameter(jwtProperties.getAuthc().getTargetUrlParameter());
+		successHandler.setUseReferer(jwtProperties.getAuthc().isUseReferer());
+		
+		return successHandler;
 	}
 	
 	@Bean("jwtAuthenticationFailureHandler")
@@ -112,12 +123,18 @@ public class SecurityJwtAutoConfiguration {
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
 			@Autowired(required = false) List<MatchedAuthenticationFailureHandler> failureHandlers, 
 			@Qualifier("jwtRedirectStrategy") RedirectStrategy redirectStrategy) {
+		
 		PostRequestAuthenticationFailureHandler failureHandler = new PostRequestAuthenticationFailureHandler(
-				authenticationListeners, failureHandlers, jwtProperties.getAuthc().getFailureUrl());
+				authenticationListeners, failureHandlers);
+		
 		failureHandler.setAllowSessionCreation(jwtProperties.getAuthc().isAllowSessionCreation());
+		failureHandler.setDefaultFailureUrl(jwtProperties.getAuthc().getFailureUrl());
 		failureHandler.setRedirectStrategy(redirectStrategy);
+		failureHandler.setStateless(bizProperties.isStateless());
 		failureHandler.setUseForward(jwtProperties.getAuthc().isUseForward());
+		
 		return failureHandler;
+		
 	}
 	
 	@Bean
