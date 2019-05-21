@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
+import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
 import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -50,6 +51,12 @@ public class JwtAuthenticationSuccessHandler implements AuthenticationSuccessHan
     	
 		Map<String, Object> tokenMap = new HashMap<String, Object>();
 		tokenMap.put("code", "0");
+		// 账号首次登陆标记
+		if(SecurityPrincipal.class.isAssignableFrom(userDetails.getClass())) {
+			tokenMap.put("initial", ((SecurityPrincipal) userDetails).isInitial());
+		} else {
+			tokenMap.put("initial", false);
+		}
 		tokenMap.put("perms", userDetails.getAuthorities());
 		tokenMap.put("token", getPayloadRepository().issueJwt((JwtAuthenticationToken) authentication));
 		tokenMap.put("username", userDetails.getUsername());
