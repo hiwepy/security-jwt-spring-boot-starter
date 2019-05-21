@@ -62,15 +62,13 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	private boolean continueChainBeforeSuccessfulAuthentication = false;
 	private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
 	
+	public JwtAuthorizationProcessingFilter() {
+		super(new AntPathRequestMatcher("/**"));
+	}
+	
 	public JwtAuthorizationProcessingFilter(List<String> ignorePatterns) {
 		super(new AntPathRequestMatcher("/**"));
-		if(!CollectionUtils.isEmpty(ignorePatterns)) {
-			List<RequestMatcher> ignoreRequestMatchers = new ArrayList<>();
-			for (String pattern : ignorePatterns) {
-				ignoreRequestMatchers.add(new AntPathRequestMatcher(pattern));
-			}
-			ignoreRequestMatcher = new OrRequestMatcher(ignoreRequestMatchers);
-		}
+		this.setIgnoreRequestMatcher(ignorePatterns);
 	}
 
 	@Override
@@ -198,6 +196,22 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		}
 		return token;
 	}
+	
+	public void setIgnoreRequestMatcher(List<String> ignorePatterns) {
+		
+		if(!CollectionUtils.isEmpty(ignorePatterns)) {
+			List<RequestMatcher> ignoreRequestMatchers = new ArrayList<>();
+			for (String pattern : ignorePatterns) {
+				ignoreRequestMatchers.add(new AntPathRequestMatcher(pattern));
+			}
+			ignoreRequestMatcher = new OrRequestMatcher(ignoreRequestMatchers);
+		}
+	}
+	
+	public void setIgnoreRequestMatcher(RequestMatcher ignoreRequestMatcher) {
+		this.ignoreRequestMatcher = ignoreRequestMatcher;
+	}
+
 
 	public String getAuthorizationHeaderName() {
 		return authorizationHeaderName;
