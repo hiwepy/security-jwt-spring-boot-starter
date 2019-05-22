@@ -18,8 +18,10 @@ import org.springframework.security.boot.biz.authentication.nested.MatchedAuthen
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.property.SessionFixationPolicy;
+import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
+import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationSuccessHandler;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
@@ -145,6 +147,11 @@ public class SecurityJwtAutoConfiguration {
 	@Bean
 	public JwtMatchedAuthenticationEntryPoint jwtMatchedAuthenticationEntryPoint() {
 		return new JwtMatchedAuthenticationEntryPoint();
+	}
+
+	@Bean
+	public JwtMatchedAuthenticationSuccessHandler jwtMatchedAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository) {
+		return new JwtMatchedAuthenticationSuccessHandler(payloadRepository);
 	}
     
     @Configuration

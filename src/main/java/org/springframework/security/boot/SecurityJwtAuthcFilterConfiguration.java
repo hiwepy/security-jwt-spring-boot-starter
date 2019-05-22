@@ -1,9 +1,6 @@
 package org.springframework.security.boot;
 
-import java.util.List;
-
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -15,21 +12,18 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
-import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
 import org.springframework.security.boot.biz.authentication.captcha.NullCaptchaResolver;
+import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationSuccessHandler;
-import org.springframework.security.boot.jwt.authentication.JwtAuthenticationToken;
-import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
-import org.springframework.security.boot.jwt.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -69,27 +63,21 @@ public class SecurityJwtAuthcFilterConfiguration {
 		return new JwtPayloadRepository() {
 
 			@Override
-			public String issueJwt(JwtAuthenticationToken token) {
+			public String issueJwt(AbstractAuthenticationToken token) {
 				return null;
 			}
 
 			@Override
-			public boolean verify(JwtAuthorizationToken token, boolean checkExpiry) throws AuthenticationException {
+			public boolean verify(AbstractAuthenticationToken token, boolean checkExpiry) throws AuthenticationException {
 				return false;
 			}
 
 			@Override
-			public JwtPayload getPayload(JwtAuthorizationToken token, boolean checkExpiry) {
+			public JwtPayload getPayload(AbstractAuthenticationToken token, boolean checkExpiry) {
 				return null;
 			}
 			
 		};
-	}
-	
-	@Bean
-	public JwtAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository, 
-			@Autowired(required = false) List<AuthenticationListener> authenticationListeners) {
-		return new JwtAuthenticationSuccessHandler(payloadRepository, authenticationListeners);
 	}
 	
 	@Bean
