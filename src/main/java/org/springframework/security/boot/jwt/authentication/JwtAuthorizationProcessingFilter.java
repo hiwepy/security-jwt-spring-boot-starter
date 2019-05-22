@@ -16,8 +16,9 @@
 package org.springframework.security.boot.jwt.authentication;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -37,7 +38,6 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.CollectionUtils;
 
@@ -57,9 +57,8 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	private String authorizationHeaderName = AUTHORIZATION_HEADER;
 	private String authorizationParamName = AUTHORIZATION_PARAM;
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
-	private RequestMatcher ignoreRequestMatcher;
+	private List<RequestMatcher> ignoreRequestMatchers;
 	
-	private boolean continueChainBeforeSuccessfulAuthentication = false;
 	private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
 	
 	public JwtAuthorizationProcessingFilter() {
@@ -74,8 +73,12 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	@Override
 	protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
 		// 忽略部分请求
-		if(ignoreRequestMatcher != null && ignoreRequestMatcher.matches(request)) {
-			return false;
+		if(!CollectionUtils.isEmpty(ignoreRequestMatchers)) {
+			for (RequestMatcher requestMatcher : ignoreRequestMatchers) {
+				if(requestMatcher.matches(request)) {
+					return false;
+				}
+			}
 		}
 		// 登录获取JWT的请求不拦截
 		return super.requiresAuthentication(request, response);
@@ -90,7 +93,6 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 
 		if (!requiresAuthentication(request, response)) {
 			chain.doFilter(request, response);
-
 			return;
 		}
 
@@ -125,11 +127,10 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		}
 		
 		successfulAuthentication(request, response, chain, authResult);
+
+		// Authorization success
+		chain.doFilter(request, response);
 		
-		// Authentication success
-		if (continueChainBeforeSuccessfulAuthentication) {
-			chain.doFilter(request, response);
-		}
 	}
 	
 	@Override
@@ -138,13 +139,7 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		super.setSessionAuthenticationStrategy(sessionStrategy);
 		this.sessionStrategy = sessionStrategy;
 	}
-	
-	@Override
-	public void setContinueChainBeforeSuccessfulAuthentication(boolean continueChainBeforeSuccessfulAuthentication) {
-		super.setContinueChainBeforeSuccessfulAuthentication(continueChainBeforeSuccessfulAuthentication);
-		this.continueChainBeforeSuccessfulAuthentication = continueChainBeforeSuccessfulAuthentication;
-	}
-	
+
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
@@ -198,20 +193,16 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	}
 	
 	public void setIgnoreRequestMatcher(List<String> ignorePatterns) {
-		
 		if(!CollectionUtils.isEmpty(ignorePatterns)) {
-			List<RequestMatcher> ignoreRequestMatchers = new ArrayList<>();
-			for (String pattern : ignorePatterns) {
-				ignoreRequestMatchers.add(new AntPathRequestMatcher(pattern));
-			}
-			ignoreRequestMatcher = new OrRequestMatcher(ignoreRequestMatchers);
+			this.ignoreRequestMatchers = ignorePatterns.stream().map(pattern -> {
+				return new AntPathRequestMatcher(pattern);
+			}).collect(Collectors.toList());
 		}
 	}
 	
-	public void setIgnoreRequestMatcher(RequestMatcher ignoreRequestMatcher) {
-		this.ignoreRequestMatcher = ignoreRequestMatcher;
+	public void setIgnoreRequestMatchers(RequestMatcher ...ignoreRequestMatchers) {
+		this.ignoreRequestMatchers = Arrays.asList(ignoreRequestMatchers);
 	}
-
 
 	public String getAuthorizationHeaderName() {
 		return authorizationHeaderName;
