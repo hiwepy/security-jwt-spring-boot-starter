@@ -3,6 +3,7 @@ package org.springframework.security.boot.jwt.authentication;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -96,7 +97,10 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
 		
-		principal.setUserid(payload.getClientId());
+		Map<String, Object> claims = payload.getClaims();
+		principal.setUserid(String.valueOf(claims.get("userid")));
+		principal.setUserkey(String.valueOf(claims.get("userkey")));
+		principal.setUsercode(String.valueOf(claims.get("usercode")));
 		principal.setAlias(payload.getAlias());
 		principal.setPerms(new HashSet<String>());
 		principal.setRoles(new HashSet<String>(roles));
