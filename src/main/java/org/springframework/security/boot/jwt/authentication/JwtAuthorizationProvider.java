@@ -102,7 +102,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		principal.setUserkey(String.valueOf(claims.get("userkey")));
 		principal.setUsercode(String.valueOf(claims.get("usercode")));
 		principal.setAlias(payload.getAlias());
-		principal.setPerms(new HashSet<String>());
+		principal.setPerms(new HashSet<String>(perms));
 		principal.setRoles(new HashSet<String>(roles));
         
         // User Status Check
