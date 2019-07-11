@@ -22,6 +22,7 @@ import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import com.github.vindell.jwt.JwtPayload;
 
@@ -97,14 +98,18 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
 		
+		String roleFirst = CollectionUtils.isEmpty(roles) ? "anonymous" : roles.stream().findFirst().get();
+		
 		Map<String, Object> claims = payload.getClaims();
 		principal.setUserid(String.valueOf(claims.get("userid")));
 		principal.setUserkey(String.valueOf(claims.get("userkey")));
 		principal.setUsercode(String.valueOf(claims.get("usercode")));
 		principal.setAlias(payload.getAlias());
 		principal.setPerms(new HashSet<String>(perms));
+		principal.setRole(roleFirst);
 		principal.setRoles(new HashSet<String>(roles));
-        
+		principal.setInitial(Boolean.parseBoolean(String.valueOf(claims.get("initial"))));
+		
         // User Status Check
         getUserDetailsChecker().check(principal);
         

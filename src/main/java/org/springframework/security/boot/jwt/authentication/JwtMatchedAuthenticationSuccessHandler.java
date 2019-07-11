@@ -37,7 +37,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 	
 	@Override
 	public boolean supports(Authentication authentication) {
-		return SubjectUtils.supports(authentication.getClass(), JwtAuthenticationToken.class);
+		return SubjectUtils.isAssignableFrom(authentication.getClass(), JwtAuthenticationToken.class);
 	}
 
     @Override

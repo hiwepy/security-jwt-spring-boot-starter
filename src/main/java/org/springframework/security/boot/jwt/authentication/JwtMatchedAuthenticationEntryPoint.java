@@ -48,7 +48,7 @@ public class JwtMatchedAuthenticationEntryPoint implements MatchedAuthentication
 	
 	@Override
 	public boolean supports(AuthenticationException e) {
-		return SubjectUtils.supports(e.getClass(), AuthenticationJwtIssuedException.class,
+		return SubjectUtils.isAssignableFrom(e.getClass(), AuthenticationJwtIssuedException.class,
 				AuthenticationJwtNotFoundException.class, AuthenticationJwtExpiredException.class,
 				AuthenticationJwtInvalidException.class, AuthenticationJwtIncorrectException.class);
 	}
