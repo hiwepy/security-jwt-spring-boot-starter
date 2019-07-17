@@ -58,12 +58,20 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenMap.put("usercode", securityPrincipal.getUsercode());
 			tokenMap.put("userkey", securityPrincipal.getUserkey());
 			tokenMap.put("userid", securityPrincipal.getUserid());
+			tokenMap.put("roleid", securityPrincipal.getRoleid());
+			tokenMap.put("role", securityPrincipal.getRole());
+			tokenMap.put("roles", securityPrincipal.getRoles());
+			tokenMap.put("profile", securityPrincipal.getProfile());
 		} else {
 			tokenMap.put("initial", false);
 			tokenMap.put("alias", "");
 			tokenMap.put("usercode", "");
 			tokenMap.put("userkey", "");
 			tokenMap.put("userid", "");
+			tokenMap.put("roleid", "");
+			tokenMap.put("role", "");
+			tokenMap.put("roles", "");
+			tokenMap.put("profile", new HashMap<>());
 		}
 		tokenMap.put("perms", userDetails.getAuthorities());
 		tokenMap.put("token", getPayloadRepository().issueJwt((JwtAuthenticationToken) authentication));
