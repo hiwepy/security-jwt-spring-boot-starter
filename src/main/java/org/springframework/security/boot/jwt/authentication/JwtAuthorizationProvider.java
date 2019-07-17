@@ -106,6 +106,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		principal.setUsercode(String.valueOf(claims.get("usercode")));
 		principal.setAlias(payload.getAlias());
 		principal.setPerms(new HashSet<String>(perms));
+		principal.setRoleid(String.valueOf(claims.get("roleid")));
 		principal.setRole(roleFirst);
 		principal.setRoles(new HashSet<String>(roles));
 		principal.setInitial(Boolean.parseBoolean(String.valueOf(claims.get("initial"))));
