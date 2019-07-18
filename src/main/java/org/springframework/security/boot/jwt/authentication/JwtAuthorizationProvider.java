@@ -1,6 +1,5 @@
 package org.springframework.security.boot.jwt.authentication;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,6 @@ import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 import com.github.vindell.jwt.JwtPayload;
 
@@ -79,7 +77,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		
 		// 用户角色ID集合
-   		List<String> roles = Arrays.asList(StringUtils.tokenizeToStringArray(payload.getRoles()));
+   		List<String> roles = payload.getRoles();
    		for (String role : roles) {
    			//角色必须是ROLE_开头，可以在数据库中设置
             GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(StringUtils.startsWithIgnoreCase(role, "ROLE_") ?
@@ -88,7 +86,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		}
    		
    		// 用户权限标记集合
-   		List<String> perms = Arrays.asList(StringUtils.tokenizeToStringArray(payload.getPerms()));
+   		List<String> perms = payload.getPerms();
 		for (String perm : perms ) {
 			GrantedAuthority authority = new SimpleGrantedAuthority(perm);
             grantedAuthorities.add(authority);
@@ -98,18 +96,18 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
 		
-		String roleFirst = CollectionUtils.isEmpty(roles) ? "anonymous" : roles.stream().findFirst().get();
-		
 		Map<String, Object> claims = payload.getClaims();
 		principal.setUserid(String.valueOf(claims.get("userid")));
 		principal.setUserkey(String.valueOf(claims.get("userkey")));
 		principal.setUsercode(String.valueOf(claims.get("usercode")));
 		principal.setAlias(payload.getAlias());
 		principal.setPerms(new HashSet<String>(perms));
-		principal.setRoleid(String.valueOf(claims.get("roleid")));
-		principal.setRole(roleFirst);
+		principal.setRoleid(payload.getRoleid());
+		principal.setRole(payload.getRole());
 		principal.setRoles(new HashSet<String>(roles));
-		principal.setInitial(Boolean.parseBoolean(String.valueOf(claims.get("initial"))));
+		principal.setInitial(payload.isInitial());
+		principal.setRestricted(payload.isRestricted());
+		principal.setProfile(payload.getProfile());
 		
         // User Status Check
         getUserDetailsChecker().check(principal);

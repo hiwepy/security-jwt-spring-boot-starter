@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -49,6 +50,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SecurityJwtAuthzFilterConfiguration {
 
 	@Bean
+	@ConditionalOnMissingBean
 	public JwtAuthorizationProvider jwtAuthorizationProvider(JwtPayloadRepository payloadRepository) {
 		return new JwtAuthorizationProvider(payloadRepository);
 	}

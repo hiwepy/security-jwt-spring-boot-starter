@@ -62,6 +62,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenMap.put("role", securityPrincipal.getRole());
 			tokenMap.put("roles", securityPrincipal.getRoles());
 			tokenMap.put("profile", securityPrincipal.getProfile());
+			tokenMap.put("restricted", securityPrincipal.isRestricted());
 		} else {
 			tokenMap.put("initial", false);
 			tokenMap.put("alias", "");
@@ -71,6 +72,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenMap.put("roleid", "");
 			tokenMap.put("role", "");
 			tokenMap.put("roles", "");
+			tokenMap.put("restricted", false);
 			tokenMap.put("profile", new HashMap<>());
 		}
 		tokenMap.put("perms", userDetails.getAuthorities());
