@@ -108,6 +108,8 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		principal.setInitial(payload.isInitial());
 		principal.setRestricted(payload.isRestricted());
 		principal.setProfile(payload.getProfile());
+		principal.setFace(payload.isFace());
+		principal.setFaceId(payload.getFaceid());
 		
         // User Status Check
         getUserDetailsChecker().check(principal);
