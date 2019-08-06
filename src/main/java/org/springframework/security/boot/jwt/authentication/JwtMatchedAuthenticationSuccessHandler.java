@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 
 /**
  * Jwt认证 (authentication)成功回调器：讲认证信息写回前端
@@ -76,7 +77,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenMap.put("roles", "");
 			tokenMap.put("restricted", false);
 			tokenMap.put("profile", new HashMap<>());
-			tokenMap.put("faced", "");
+			tokenMap.put("faced", false);
 			tokenMap.put("faceId", "");
 		}
 		tokenMap.put("perms", userDetails.getAuthorities());
@@ -86,7 +87,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		response.setStatus(HttpStatus.OK.value());
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 		
-		JSONObject.writeJSONString(response.getWriter(), tokenMap);
+		JSONObject.writeJSONString(response.getWriter(), tokenMap, SerializerFeature.WRITE_MAP_NULL_FEATURES);
     	 
     }
     
