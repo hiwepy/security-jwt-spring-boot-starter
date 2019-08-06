@@ -87,7 +87,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		response.setStatus(HttpStatus.OK.value());
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 		
-		JSONObject.writeJSONString(response.getWriter(), tokenMap, SerializerFeature.WRITE_MAP_NULL_FEATURES);
+		JSONObject.writeJSONString(response.getWriter(), tokenMap, SerializerFeature.WriteMapNullValue);
     	 
     }
     
