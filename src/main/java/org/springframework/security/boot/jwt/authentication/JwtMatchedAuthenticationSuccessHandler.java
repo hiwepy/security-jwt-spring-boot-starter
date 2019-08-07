@@ -1,6 +1,7 @@
 package org.springframework.security.boot.jwt.authentication;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,9 +20,10 @@ import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
 import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 
 /**
  * Jwt认证 (authentication)成功回调器：讲认证信息写回前端
@@ -31,6 +33,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
    
 	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
 	private JwtPayloadRepository payloadRepository;
+	private final String EMPTY = "null";
 	
 	public JwtMatchedAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository) {
 		this.setPayloadRepository(payloadRepository);
@@ -55,30 +58,30 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		if(SecurityPrincipal.class.isAssignableFrom(userDetails.getClass())) {
 			SecurityPrincipal securityPrincipal = (SecurityPrincipal) userDetails;
 			tokenMap.put("initial", securityPrincipal.isInitial());
-			tokenMap.put("alias", securityPrincipal.getAlias());
-			tokenMap.put("usercode", securityPrincipal.getUsercode());
-			tokenMap.put("userkey", securityPrincipal.getUserkey());
-			tokenMap.put("userid", securityPrincipal.getUserid());
-			tokenMap.put("roleid", securityPrincipal.getRoleid());
-			tokenMap.put("role", securityPrincipal.getRole());
-			tokenMap.put("roles", securityPrincipal.getRoles());
-			tokenMap.put("profile", securityPrincipal.getProfile());
+			tokenMap.put("alias", StringUtils.hasText(securityPrincipal.getAlias()) ? securityPrincipal.getAlias() : EMPTY);
+			tokenMap.put("usercode", StringUtils.hasText(securityPrincipal.getUsercode()) ? securityPrincipal.getUsercode() : EMPTY);
+			tokenMap.put("userkey", StringUtils.hasText(securityPrincipal.getUserkey()) ? securityPrincipal.getUserkey() : EMPTY);
+			tokenMap.put("userid", StringUtils.hasText(securityPrincipal.getUserid()) ? securityPrincipal.getUserid() : EMPTY);
+			tokenMap.put("roleid", StringUtils.hasText(securityPrincipal.getRoleid()) ? securityPrincipal.getRoleid() : EMPTY );
+			tokenMap.put("role", StringUtils.hasText(securityPrincipal.getRole()) ? securityPrincipal.getRole() : EMPTY);
+			tokenMap.put("roles", CollectionUtils.isEmpty(securityPrincipal.getRoles()) ? new ArrayList<>() : securityPrincipal.getRoles() );
 			tokenMap.put("restricted", securityPrincipal.isRestricted());
+			tokenMap.put("profile", CollectionUtils.isEmpty(securityPrincipal.getProfile()) ? new HashMap<>() : securityPrincipal.getProfile() );
 			tokenMap.put("faced", securityPrincipal.isFace());
-			tokenMap.put("faceId", securityPrincipal.getFaceId());
+			tokenMap.put("faceId", StringUtils.hasText(securityPrincipal.getFaceId()) ? securityPrincipal.getFaceId() : EMPTY ); 
 		} else {
 			tokenMap.put("initial", false);
-			tokenMap.put("alias", "");
-			tokenMap.put("usercode", "");
-			tokenMap.put("userkey", "");
-			tokenMap.put("userid", "");
-			tokenMap.put("roleid", "");
-			tokenMap.put("role", "");
-			tokenMap.put("roles", "");
+			tokenMap.put("alias", "匿名账户");
+			tokenMap.put("usercode", EMPTY);
+			tokenMap.put("userkey", EMPTY);
+			tokenMap.put("userid", EMPTY);
+			tokenMap.put("roleid", EMPTY);
+			tokenMap.put("role", EMPTY);
+			tokenMap.put("roles", new ArrayList<>());
 			tokenMap.put("restricted", false);
 			tokenMap.put("profile", new HashMap<>());
 			tokenMap.put("faced", false);
-			tokenMap.put("faceId", "");
+			tokenMap.put("faceId", EMPTY);
 		}
 		tokenMap.put("perms", userDetails.getAuthorities());
 		tokenMap.put("token", getPayloadRepository().issueJwt((JwtAuthenticationToken) authentication));
@@ -87,7 +90,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		response.setStatus(HttpStatus.OK.value());
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 		
-		JSONObject.writeJSONString(response.getWriter(), tokenMap, SerializerFeature.WriteMapNullValue);
+		JSONObject.writeJSONString(response.getWriter(), tokenMap);
     	 
     }
     
