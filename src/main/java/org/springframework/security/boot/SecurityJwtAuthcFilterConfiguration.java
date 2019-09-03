@@ -131,7 +131,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				
    				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-				@Qualifier("jwtSessionAuthenticationStrategy") ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider) {
+				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider) {
 		    
 			
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
