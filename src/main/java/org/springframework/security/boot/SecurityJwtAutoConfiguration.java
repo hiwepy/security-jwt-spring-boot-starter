@@ -100,7 +100,7 @@ public class SecurityJwtAutoConfiguration {
 		PostRequestAuthenticationFailureHandler failureHandler = new PostRequestAuthenticationFailureHandler(
 				authenticationListeners, failureHandlers);
 		
-		failureHandler.setAllowSessionCreation(jwtProperties.getAuthc().isAllowSessionCreation());
+		failureHandler.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
 		failureHandler.setDefaultFailureUrl(jwtProperties.getAuthc().getFailureUrl());
 		failureHandler.setRedirectStrategy(redirectStrategy);
 		failureHandler.setStateless(bizProperties.isStateless());
