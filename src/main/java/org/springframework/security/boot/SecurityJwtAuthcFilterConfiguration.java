@@ -104,7 +104,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    private final ObjectMapper objectMapper;
 	    private final RememberMeServices rememberMeServices;
 	    
-		private final SecurityJwtProperties jwtProperties;
+	    private final SecurityBizProperties bizProperties;
 		private final SecurityJwtAuthcProperties jwtAuthcProperties;
  	    private final JwtAuthenticationProvider authenticationProvider;
  	    private final PostRequestAuthenticationSuccessHandler authenticationSuccessHandler;
@@ -121,6 +121,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    				ObjectProvider<SessionRegistry> sessionRegistryProvider,
    				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
    				
+   				SecurityBizProperties bizProperties,
    				SecurityJwtProperties jwtProperties,
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				ObjectProvider<JwtAuthenticationProvider> authenticationProvider,
@@ -137,7 +138,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    			this.objectMapper = objectMapperProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			
-   			this.jwtProperties = jwtProperties;
+   			this.bizProperties = bizProperties;
    			this.jwtAuthcProperties = jwtAuthcProperties;
    			this.authenticationProvider = authenticationProvider.getIfAvailable();
    			this.authenticationSuccessHandler = authenticationSuccessHandler.getIfAvailable();
@@ -165,7 +166,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 			// 认证失败计数器
 			authcFilter.setFailureCounter(authenticatingFailureCounter);
 
-			authcFilter.setAllowSessionCreation(jwtProperties.getSessionMgt().isAllowSessionCreation());
+			authcFilter.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
 			authcFilter.setApplicationEventPublisher(eventPublisher);
 			authcFilter.setAuthenticationFailureHandler(authenticationFailureHandler);
 			authcFilter.setAuthenticationManager(authenticationManager);

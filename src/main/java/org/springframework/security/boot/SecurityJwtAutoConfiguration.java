@@ -18,7 +18,6 @@ import org.springframework.security.boot.biz.authentication.nested.MatchedAuthen
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
-import org.springframework.security.boot.biz.property.SessionFixationPolicy;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
@@ -29,11 +28,7 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
@@ -49,50 +44,17 @@ public class SecurityJwtAutoConfiguration {
 	private SecurityBizProperties bizProperties;
 	@Autowired
 	private SecurityJwtProperties jwtProperties;
+
+	@Bean("jwtExpiredSessionStrategy")
+	public SessionInformationExpiredStrategy jwtExpiredSessionStrategy() {
+		return new SimpleRedirectSessionInformationExpiredStrategy(jwtProperties.getInvalidSessionUrl(), jwtRedirectStrategy());
+	}
 	
 	@Bean("jwtRedirectStrategy")
 	public RedirectStrategy jwtRedirectStrategy() {
 		DefaultRedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
 		redirectStrategy.setContextRelative(jwtProperties.getRedirect().isContextRelative());
 		return redirectStrategy;
-	}
-
-	@Bean("jwtRequestCache")
-	public RequestCache jwtRequestCache() {
-		HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
-		requestCache.setCreateSessionAllowed(jwtProperties.getSessionMgt().isAllowSessionCreation());
-		requestCache.setSessionAttrName(jwtProperties.getSessionMgt().getSessionAttrName());
-		return requestCache;
-	}
-
-	@Bean("jwtInvalidSessionStrategy")
-	public InvalidSessionStrategy jwtInvalidSessionStrategy() {
-		SimpleRedirectInvalidSessionStrategy invalidSessionStrategy = new SimpleRedirectInvalidSessionStrategy(
-				jwtProperties.getInvalidSessionUrl());
-		invalidSessionStrategy.setCreateNewSession(jwtProperties.getSessionMgt().isAllowSessionCreation());
-		return invalidSessionStrategy;
-	}
-
-	@Bean("jwtExpiredSessionStrategy")
-	public SessionInformationExpiredStrategy jwtExpiredSessionStrategy() {
-		return new SimpleRedirectSessionInformationExpiredStrategy(jwtProperties.getInvalidSessionUrl(), jwtRedirectStrategy());
-	}
-
-	@Bean("jwtSessionAuthenticationStrategy")
-	public SessionAuthenticationStrategy jwtSessionAuthenticationStrategy() {
-		// Session 管理器配置参数
-		SecuritySessionMgtProperties sessionMgt = jwtProperties.getSessionMgt();
-		if (SessionFixationPolicy.CHANGE_SESSION_ID.equals(sessionMgt.getFixationPolicy())) {
-			return new ChangeSessionIdAuthenticationStrategy();
-		} else if (SessionFixationPolicy.MIGRATE_SESSION.equals(sessionMgt.getFixationPolicy())) {
-			return new SessionFixationProtectionStrategy();
-		} else if (SessionFixationPolicy.NEW_SESSION.equals(sessionMgt.getFixationPolicy())) {
-			SessionFixationProtectionStrategy sessionFixationProtectionStrategy = new SessionFixationProtectionStrategy();
-			sessionFixationProtectionStrategy.setMigrateSessionAttributes(false);
-			return sessionFixationProtectionStrategy;
-		} else {
-			return new NullAuthenticatedSessionStrategy();
-		}
 	}
 
 	@Bean("jwtSecurityContextLogoutHandler")
@@ -103,6 +65,14 @@ public class SecurityJwtAutoConfiguration {
 		logoutHandler.setInvalidateHttpSession(jwtProperties.getLogout().isInvalidateHttpSession());
 
 		return logoutHandler;
+	}
+	
+	@Bean("jwtInvalidSessionStrategy")
+	public InvalidSessionStrategy jwtInvalidSessionStrategy() {
+		SimpleRedirectInvalidSessionStrategy invalidSessionStrategy = new SimpleRedirectInvalidSessionStrategy(
+				jwtProperties.getInvalidSessionUrl());
+		invalidSessionStrategy.setCreateNewSession(bizProperties.getSessionMgt().isAllowSessionCreation());
+		return invalidSessionStrategy;
 	}
 
 	@Bean("jwtAuthenticationSuccessHandler")
@@ -162,7 +132,8 @@ public class SecurityJwtAutoConfiguration {
 	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
     @Order(105)
 	static class JwtWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
-
+    	
+    	private final SecurityBizProperties bizProperties;
     	private final SecurityJwtProperties jwtProperties;
     	private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
     	private final InvalidSessionStrategy invalidSessionStrategy;
@@ -173,14 +144,17 @@ public class SecurityJwtAutoConfiguration {
 		private final SessionInformationExpiredStrategy expiredSessionStrategy;
 		
 		public JwtWebSecurityConfigurerAdapter(
+				SecurityBizProperties bizProperties,
 				SecurityJwtProperties jwtProperties,
 				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandlerProvider,
 				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
-				@Qualifier("jwtRequestCache") ObjectProvider<RequestCache> requestCacheProvider,
+				ObjectProvider<RequestCache> requestCacheProvider,
 				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
 				@Qualifier("jwtSessionAuthenticationStrategy") ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
 				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider) {
+			
+			this.bizProperties = bizProperties;
 			this.jwtProperties = jwtProperties;
 			this.authenticationFailureHandler = authenticationFailureHandlerProvider.getIfAvailable();
 
@@ -198,7 +172,7 @@ public class SecurityJwtAutoConfiguration {
 			http.csrf().disable(); // We don't need CSRF for JWT based authentication
 	    	
 	    	// Session 管理器配置参数
-	    	SecuritySessionMgtProperties sessionMgt = jwtProperties.getSessionMgt();
+	    	SecuritySessionMgtProperties sessionMgt = bizProperties.getSessionMgt();
 	    	// Session 注销配置参数
 	    	SecurityLogoutProperties logout = jwtProperties.getLogout();
 	    	

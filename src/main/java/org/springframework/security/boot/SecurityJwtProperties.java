@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecurityRedirectProperties;
-import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 
 @ConfigurationProperties(prefix = SecurityJwtProperties.PREFIX)
 public class SecurityJwtProperties {
@@ -20,8 +19,7 @@ public class SecurityJwtProperties {
 	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
 	@NestedConfigurationProperty
 	private SecurityRedirectProperties redirect = new SecurityRedirectProperties();
-	@NestedConfigurationProperty
-	private SecuritySessionMgtProperties sessionMgt = new SecuritySessionMgtProperties();
+	
 	private String invalidSessionUrl = "/";
 	private boolean useForward = false;
 	
@@ -55,14 +53,6 @@ public class SecurityJwtProperties {
 
 	public void setRedirect(SecurityRedirectProperties redirect) {
 		this.redirect = redirect;
-	}
-
-	public SecuritySessionMgtProperties getSessionMgt() {
-		return sessionMgt;
-	}
-
-	public void setSessionMgt(SecuritySessionMgtProperties sessionMgt) {
-		this.sessionMgt = sessionMgt;
 	}
 
 	public String getInvalidSessionUrl() {
