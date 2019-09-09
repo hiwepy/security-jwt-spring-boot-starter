@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.boot.biz.SpringSecurityBizMessageSource;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.exception.AuthResponseCode;
@@ -84,7 +85,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenMap.put("faceId", EMPTY);
 		}
 		tokenMap.put("perms", userDetails.getAuthorities());
-		tokenMap.put("token", getPayloadRepository().issueJwt((JwtAuthenticationToken) authentication));
+		tokenMap.put("token", getPayloadRepository().issueJwt((AbstractAuthenticationToken) authentication));
 		tokenMap.put("username", userDetails.getUsername());
 		
 		response.setStatus(HttpStatus.OK.value());
