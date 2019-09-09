@@ -85,6 +85,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    				SecurityJwtAuthzProperties jwtAuthzProperties,
    				
 				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
+				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
    				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
    				ObjectProvider<JwtAuthorizationSuccessHandler> authorizationSuccessHandler,
    				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
@@ -95,7 +96,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
 				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
    				
-   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
 				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider
 				
 			) {

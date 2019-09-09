@@ -110,9 +110,11 @@ public class SecurityJwtAutoConfiguration {
 				ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandlerProvider,
 				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
+				ObjectProvider<SessionInformationExpiredStrategy> sessionInformationExpiredStrategyProvider,
 				
-				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
-				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider) {
+				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider
+			
+			) {
 			
 			this.bizProperties = bizProperties;
 			this.jwtProperties = jwtProperties;
@@ -123,7 +125,7 @@ public class SecurityJwtAutoConfiguration {
 			this.securityContextLogoutHandler = securityContextLogoutHandlerProvider.getIfAvailable();
 			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
 			this.sessionRegistry = sessionRegistryProvider.getIfAvailable();
-			this.expiredSessionStrategy = expiredSessionStrategyProvider.getIfAvailable();
+			this.expiredSessionStrategy = sessionInformationExpiredStrategyProvider.getIfAvailable();
 		}
 
 		@Override

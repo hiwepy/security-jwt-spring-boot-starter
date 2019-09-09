@@ -121,16 +121,17 @@ public class SecurityJwtAuthcFilterConfiguration {
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				
 				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
+				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				ObjectProvider<JwtAuthenticationProvider> authenticationProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
+   				ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
    				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
    				ObjectProvider<SessionRegistry> sessionRegistryProvider,
    				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
    				
-   				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
-   				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
-   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter) {
+   				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler
+   			) {
 		    
 			
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
