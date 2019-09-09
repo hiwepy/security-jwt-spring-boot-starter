@@ -30,7 +30,7 @@ public class SecurityJwtAuthzProperties {
 	
 	/** Whether Enable JWT Authorization. */
 	private boolean enabled = false;
-	private boolean allowSessionCreation = false;
+	
 	/** Authorization Path Pattern */
 	private String pathPattern = "/**";
 	private String[] ignorePatterns = new String[] {"/login/jwt"};
@@ -58,14 +58,6 @@ public class SecurityJwtAuthzProperties {
 		this.enabled = enabled;
 	}
 	
-	public boolean isAllowSessionCreation() {
-		return allowSessionCreation;
-	}
-
-	public void setAllowSessionCreation(boolean allowSessionCreation) {
-		this.allowSessionCreation = allowSessionCreation;
-	}
-
 	public String getPathPattern() {
 		return pathPattern;
 	}

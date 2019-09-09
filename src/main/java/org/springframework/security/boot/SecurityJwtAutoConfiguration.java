@@ -14,7 +14,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
-import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
@@ -25,15 +24,11 @@ import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthentica
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.web.DefaultRedirectStrategy;
-import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
-import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
-import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 @Configuration
 @AutoConfigureBefore(SecurityBizAutoConfiguration.class)
@@ -45,17 +40,6 @@ public class SecurityJwtAutoConfiguration {
 	@Autowired
 	private SecurityJwtProperties jwtProperties;
 
-	@Bean("jwtExpiredSessionStrategy")
-	public SessionInformationExpiredStrategy jwtExpiredSessionStrategy() {
-		return new SimpleRedirectSessionInformationExpiredStrategy(jwtProperties.getInvalidSessionUrl(), jwtRedirectStrategy());
-	}
-	
-	@Bean("jwtRedirectStrategy")
-	public RedirectStrategy jwtRedirectStrategy() {
-		DefaultRedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
-		redirectStrategy.setContextRelative(jwtProperties.getRedirect().isContextRelative());
-		return redirectStrategy;
-	}
 
 	@Bean("jwtSecurityContextLogoutHandler")
 	public SecurityContextLogoutHandler jwtSecurityContextLogoutHandler() {
@@ -67,14 +51,6 @@ public class SecurityJwtAutoConfiguration {
 		return logoutHandler;
 	}
 	
-	@Bean("jwtInvalidSessionStrategy")
-	public InvalidSessionStrategy jwtInvalidSessionStrategy() {
-		SimpleRedirectInvalidSessionStrategy invalidSessionStrategy = new SimpleRedirectInvalidSessionStrategy(
-				jwtProperties.getInvalidSessionUrl());
-		invalidSessionStrategy.setCreateNewSession(bizProperties.getSessionMgt().isAllowSessionCreation());
-		return invalidSessionStrategy;
-	}
-
 	@Bean("jwtAuthenticationSuccessHandler")
 	public PostRequestAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
@@ -89,25 +65,6 @@ public class SecurityJwtAutoConfiguration {
 		successHandler.setUseReferer(jwtProperties.getAuthc().isUseReferer());
 		
 		return successHandler;
-	}
-	
-	@Bean("jwtAuthenticationFailureHandler")
-	public PostRequestAuthenticationFailureHandler jwtAuthenticationFailureHandler(
-			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
-			@Autowired(required = false) List<MatchedAuthenticationFailureHandler> failureHandlers, 
-			@Qualifier("jwtRedirectStrategy") RedirectStrategy redirectStrategy) {
-		
-		PostRequestAuthenticationFailureHandler failureHandler = new PostRequestAuthenticationFailureHandler(
-				authenticationListeners, failureHandlers);
-		
-		failureHandler.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
-		failureHandler.setDefaultFailureUrl(jwtProperties.getAuthc().getFailureUrl());
-		failureHandler.setRedirectStrategy(redirectStrategy);
-		failureHandler.setStateless(bizProperties.isStateless());
-		failureHandler.setUseForward(jwtProperties.getAuthc().isUseForward());
-		
-		return failureHandler;
-		
 	}
 	
 	@Bean
@@ -144,14 +101,17 @@ public class SecurityJwtAutoConfiguration {
 		private final SessionInformationExpiredStrategy expiredSessionStrategy;
 		
 		public JwtWebSecurityConfigurerAdapter(
+				
 				SecurityBizProperties bizProperties,
 				SecurityJwtProperties jwtProperties,
-				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandlerProvider,
-				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+
+				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
-				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
+				ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandlerProvider,
 				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
+				
+				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
 				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider) {
 			
 			this.bizProperties = bizProperties;

@@ -37,7 +37,6 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
-import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,25 +80,25 @@ public class SecurityJwtAuthzFilterConfiguration {
 		
 		public JwtAuthzWebSecurityConfigurerAdapter(
 				
-				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
-   				ObjectProvider<ObjectMapper> objectMapperProvider,
-   				ObjectProvider<SessionRegistry> sessionRegistryProvider,
-   				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
-   				
-   				SecurityBizProperties bizProperties,
+				SecurityBizProperties bizProperties,
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				SecurityJwtAuthzProperties jwtAuthzProperties,
+   				
+				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
    				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
    				ObjectProvider<JwtAuthorizationSuccessHandler> authorizationSuccessHandler,
-   				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
-   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-   				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+   				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+   				ObjectProvider<ObjectMapper> objectMapperProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
-				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider,
+				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
+				ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
+				ObjectProvider<SessionRegistry> sessionRegistryProvider,
 				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
-				@Qualifier("jwtExpiredSessionStrategy") ObjectProvider<SessionInformationExpiredStrategy> expiredSessionStrategyProvider
+   				
+   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
+				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider
 				
-				) {
+			) {
 			
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
@@ -121,7 +120,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    	
 	    	JwtAuthorizationProcessingFilter authzFilter = new JwtAuthorizationProcessingFilter();
 			
-			authzFilter.setAllowSessionCreation(jwtAuthzProperties.isAllowSessionCreation());
+			authzFilter.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
 			authzFilter.setApplicationEventPublisher(eventPublisher);
 			authzFilter.setAuthenticationFailureHandler(authorizationFailureHandler);
 			authzFilter.setAuthenticationManager(authenticationManager);

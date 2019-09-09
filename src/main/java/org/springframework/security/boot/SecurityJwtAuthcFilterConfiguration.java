@@ -116,22 +116,21 @@ public class SecurityJwtAuthcFilterConfiguration {
 		
 		public JwtAuthcWebSecurityConfigurerAdapter(
 				
-				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
-   				ObjectProvider<ObjectMapper> objectMapperProvider,
-   				ObjectProvider<SessionRegistry> sessionRegistryProvider,
-   				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
-   				
-   				SecurityBizProperties bizProperties,
+				SecurityBizProperties bizProperties,
    				SecurityJwtProperties jwtProperties,
    				SecurityJwtAuthcProperties jwtAuthcProperties,
+   				
+				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
+   				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				ObjectProvider<JwtAuthenticationProvider> authenticationProvider,
+   				ObjectProvider<ObjectMapper> objectMapperProvider,
+   				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
+   				ObjectProvider<SessionRegistry> sessionRegistryProvider,
+   				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
    				
    				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
    				@Qualifier("jwtAuthenticationFailureHandler") ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
-   				ObjectProvider<CaptchaResolver> captchaResolverProvider,
-   				
-   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider) {
+   				@Qualifier("jwtAuthenticatingFailureCounter") ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter) {
 		    
 			
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
