@@ -172,8 +172,8 @@ public class SecurityJwtAuthcFilterConfiguration {
 			authcFilter.setAuthenticationManager(authenticationManager);
 			authcFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler);
 			authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthcProperties.isContinueChainBeforeSuccessfulAuthentication());
-			if (StringUtils.hasText(jwtAuthcProperties.getLoginUrlPatterns())) {
-				authcFilter.setFilterProcessesUrl(jwtAuthcProperties.getLoginUrlPatterns());
+			if (StringUtils.hasText(jwtAuthcProperties.getPathPattern())) {
+				authcFilter.setFilterProcessesUrl(jwtAuthcProperties.getPathPattern());
 			}
 			//authcFilter.setMessageSource(messageSource);
 			authcFilter.setUsernameParameter(jwtAuthcProperties.getUsernameParameter());
@@ -200,7 +200,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    
 	    @Override
    	    public void configure(WebSecurity web) throws Exception {
-   	    	web.ignoring().antMatchers(jwtAuthcProperties.getLoginUrlPatterns());
+   	    	web.ignoring().antMatchers(jwtAuthcProperties.getPathPattern());
    	    }
 
 		@Override

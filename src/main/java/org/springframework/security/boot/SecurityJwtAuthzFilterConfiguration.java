@@ -17,7 +17,6 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
@@ -146,7 +145,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    				}).collect(Collectors.toList());
    			}
    			// 登录地址不拦截 
-   			ignorePatterns.add(jwtAuthcProperties.getLoginUrlPatterns());
+   			ignorePatterns.add(jwtAuthcProperties.getPathPattern());
 			authzFilter.setIgnoreRequestMatcher(ignorePatterns);
 			authzFilter.setRememberMeServices(rememberMeServices);
 			authzFilter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
@@ -171,9 +170,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    @Override
    	    public void configure(WebSecurity web) throws Exception {
    	    	web.ignoring()
-   	    		.antMatchers(jwtAuthcProperties.getLoginUrlPatterns())
-   	    		.antMatchers(jwtAuthzProperties.getPathPattern())
-   	    		.antMatchers(HttpMethod.OPTIONS, "/**");
+   	    		.antMatchers(jwtAuthcProperties.getPathPattern())
+   	    		.antMatchers(jwtAuthzProperties.getPathPattern());
    	    }
 
 		@Override

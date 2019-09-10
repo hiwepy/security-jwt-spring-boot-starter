@@ -35,8 +35,8 @@ public class SecurityJwtAuthcProperties {
 	/** Whether Enable JWT Authentication. */
 	private boolean enabled = false;
 
-	/** Authentication Path Pattern */
-	private String loginUrlPatterns = "/login/jwt";
+	/** Authorization Path Pattern */
+	private String pathPattern = "/login/jwt";
 	/** the username parameter name. Defaults to "username". */
 	private String usernameParameter = UsernamePasswordAuthenticationFilter.SPRING_SECURITY_FORM_USERNAME_KEY;
 	/** the password parameter name. Defaults to "password". */
@@ -66,12 +66,12 @@ public class SecurityJwtAuthcProperties {
 		this.enabled = enabled;
 	}
 
-	public String getLoginUrlPatterns() {
-		return loginUrlPatterns;
+	public String getPathPattern() {
+		return pathPattern;
 	}
 
-	public void setLoginUrlPatterns(String loginUrlPatterns) {
-		this.loginUrlPatterns = loginUrlPatterns;
+	public void setPathPattern(String pathPattern) {
+		this.pathPattern = pathPattern;
 	}
 
 	public String getUsernameParameter() {
