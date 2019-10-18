@@ -147,7 +147,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 		}
 
 
-	    @Bean
 		public JwtAuthenticationProcessingFilter authenticationProcessingFilter() throws Exception {
 	    	
 	        JwtAuthenticationProcessingFilter authenticationFilter = new JwtAuthenticationProcessingFilter(objectMapper);

@@ -110,7 +110,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    			
 		}
 
-		@Bean
 	    public JwtAuthorizationProcessingFilter authenticationProcessingFilter() {
 	    	
 	    	JwtAuthorizationProcessingFilter authenticationFilter = new JwtAuthorizationProcessingFilter();
