@@ -7,8 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -24,7 +23,6 @@ import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -96,9 +94,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
     @Order(106)
-	static class JwtAuthcWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ApplicationEventPublisherAware {
-
-    	private ApplicationEventPublisher eventPublisher;
+	static class JwtAuthcWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
     	
     	private final AuthenticationManager authenticationManager;
 	    private final ObjectMapper objectMapper;
@@ -152,39 +148,43 @@ public class SecurityJwtAuthcFilterConfiguration {
 
 
 	    @Bean
-		public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() throws Exception {
+		public JwtAuthenticationProcessingFilter authenticationProcessingFilter() throws Exception {
 	    	
-	        JwtAuthenticationProcessingFilter authcFilter = new JwtAuthenticationProcessingFilter(objectMapper);
+	        JwtAuthenticationProcessingFilter authenticationFilter = new JwtAuthenticationProcessingFilter(objectMapper);
 	        
-	        authcFilter.setCaptchaParameter(jwtAuthcProperties.getCaptcha().getParamName());
-			// 是否验证码必填
-			authcFilter.setCaptchaRequired(jwtAuthcProperties.getCaptcha().isRequired());
-			// 登陆失败重试次数，超出限制需要输入验证码
-			authcFilter.setRetryTimesWhenAccessDenied(jwtAuthcProperties.getCaptcha().getRetryTimesWhenAccessDenied());
-			// 验证码解析器
-			authcFilter.setCaptchaResolver(captchaResolver);
-			// 认证失败计数器
-			authcFilter.setFailureCounter(authenticatingFailureCounter);
-
-			authcFilter.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
-			authcFilter.setApplicationEventPublisher(eventPublisher);
-			authcFilter.setAuthenticationFailureHandler(authenticationFailureHandler);
-			authcFilter.setAuthenticationManager(authenticationManager);
-			authcFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler);
-			authcFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthcProperties.isContinueChainBeforeSuccessfulAuthentication());
-			if (StringUtils.hasText(jwtAuthcProperties.getPathPattern())) {
-				authcFilter.setFilterProcessesUrl(jwtAuthcProperties.getPathPattern());
-			}
-			//authcFilter.setMessageSource(messageSource);
-			authcFilter.setUsernameParameter(jwtAuthcProperties.getUsernameParameter());
-			authcFilter.setPasswordParameter(jwtAuthcProperties.getPasswordParameter());
-			authcFilter.setPostOnly(jwtAuthcProperties.isPostOnly());
-			authcFilter.setRememberMeServices(rememberMeServices);
-			authcFilter.setRetryTimesKeyAttribute(jwtAuthcProperties.getRetryTimesKeyAttribute());
-			authcFilter.setRetryTimesWhenAccessDenied(jwtAuthcProperties.getRetryTimesWhenAccessDenied());
-			authcFilter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
+	        /**
+			 * 批量设置参数
+			 */
+			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 			
-	        return authcFilter;
+			map.from(bizProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
+			
+			map.from(authenticationManager).to(authenticationFilter::setAuthenticationManager);
+			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
+			map.from(authenticationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
+			
+			map.from(jwtAuthcProperties.getPathPattern()).to(authenticationFilter::setFilterProcessesUrl);
+			
+			map.from(jwtAuthcProperties.getCaptcha().getParamName()).to(authenticationFilter::setCaptchaParameter);
+			// 是否验证码必填
+			map.from(jwtAuthcProperties.getCaptcha().isRequired()).to(authenticationFilter::setCaptchaRequired);
+			// 验证码解析器
+			map.from(captchaResolver).to(authenticationFilter::setCaptchaResolver);
+			// 认证失败计数器
+			map.from(authenticatingFailureCounter).to(authenticationFilter::setFailureCounter);
+			
+			map.from(jwtAuthcProperties.getUsernameParameter()).to(authenticationFilter::setUsernameParameter);
+			map.from(jwtAuthcProperties.getPasswordParameter()).to(authenticationFilter::setPasswordParameter);
+			map.from(jwtAuthcProperties.isPostOnly()).to(authenticationFilter::setPostOnly);
+			// 登陆失败重试次数，超出限制需要输入验证码
+			map.from(jwtAuthcProperties.getRetryTimesKeyAttribute()).to(authenticationFilter::setRetryTimesKeyAttribute);
+			map.from(jwtAuthcProperties.getRetryTimesWhenAccessDenied()).to(authenticationFilter::setRetryTimesWhenAccessDenied);
+			
+			map.from(rememberMeServices).to(authenticationFilter::setRememberMeServices);
+			map.from(sessionAuthenticationStrategy).to(authenticationFilter::setSessionAuthenticationStrategy);
+			map.from(jwtAuthcProperties.isContinueChainBeforeSuccessfulAuthentication()).to(authenticationFilter::setContinueChainBeforeSuccessfulAuthentication);
+			
+	        return authenticationFilter;
 	    }
 		
 		@Override
@@ -195,18 +195,13 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    @Override
 	    protected void configure(HttpSecurity http) throws Exception {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	http.addFilterBefore(jwtAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+	    	http.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
 	    
 	    @Override
    	    public void configure(WebSecurity web) throws Exception {
    	    	web.ignoring().antMatchers(jwtAuthcProperties.getPathPattern());
    	    }
-
-		@Override
-		public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-			this.eventPublisher = applicationEventPublisher;
-		}
 		
 	}
 

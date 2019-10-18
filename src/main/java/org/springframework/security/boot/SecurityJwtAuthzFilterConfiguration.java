@@ -12,8 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -24,7 +23,6 @@ import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationSuccessHandler;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -61,10 +59,8 @@ public class SecurityJwtAuthzFilterConfiguration {
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
     @Order(107)
-	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ApplicationEventPublisherAware {
+	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
-    	private ApplicationEventPublisher eventPublisher;
-    	
     	private final AuthenticationManager authenticationManager;
 	    private final RememberMeServices rememberMeServices;
 	    
@@ -115,22 +111,26 @@ public class SecurityJwtAuthzFilterConfiguration {
 		}
 
 		@Bean
-	    public JwtAuthorizationProcessingFilter jwtAuthorizationProcessingFilter() {
+	    public JwtAuthorizationProcessingFilter authenticationProcessingFilter() {
 	    	
-	    	JwtAuthorizationProcessingFilter authzFilter = new JwtAuthorizationProcessingFilter();
+	    	JwtAuthorizationProcessingFilter authenticationFilter = new JwtAuthorizationProcessingFilter();
 			
-			authzFilter.setAllowSessionCreation(bizProperties.getSessionMgt().isAllowSessionCreation());
-			authzFilter.setApplicationEventPublisher(eventPublisher);
-			authzFilter.setAuthenticationFailureHandler(authorizationFailureHandler);
-			authzFilter.setAuthenticationManager(authenticationManager);
-			authzFilter.setAuthenticationSuccessHandler(authorizationSuccessHandler);
-			authzFilter.setContinueChainBeforeSuccessfulAuthentication(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication());
-			if (StringUtils.hasText(jwtAuthzProperties.getPathPattern())) {
-				authzFilter.setFilterProcessesUrl(jwtAuthzProperties.getPathPattern());
-			}
-			authzFilter.setAuthorizationCookieName(jwtAuthzProperties.getAuthorizationCookieName());
-			authzFilter.setAuthorizationHeaderName(jwtAuthzProperties.getAuthorizationHeaderName());
-			authzFilter.setAuthorizationParamName(jwtAuthzProperties.getAuthorizationParamName());
+	    	/**
+			 * 批量设置参数
+			 */
+			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+			
+			map.from(bizProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
+			map.from(authenticationManager).to(authenticationFilter::setAuthenticationManager);
+			map.from(authorizationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
+			map.from(authorizationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
+			map.from(jwtAuthzProperties.getAuthorizationCookieName()).to(authenticationFilter::setAuthorizationCookieName);
+			map.from(jwtAuthzProperties.getAuthorizationHeaderName()).to(authenticationFilter::setAuthorizationHeaderName);
+			map.from(jwtAuthzProperties.getAuthorizationParamName()).to(authenticationFilter::setAuthorizationParamName);
+			map.from(jwtAuthzProperties.getPathPattern()).to(authenticationFilter::setFilterProcessesUrl);
+			map.from(rememberMeServices).to(authenticationFilter::setRememberMeServices);
+			map.from(sessionAuthenticationStrategy).to(authenticationFilter::setSessionAuthenticationStrategy);
+			map.from(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication()).to(authenticationFilter::setContinueChainBeforeSuccessfulAuthentication);
 			
 			// 对过滤链按过滤器名称进行分组
 			List<Entry<String, String>> noneEntries = bizProperties.getFilterChainDefinitionMap().entrySet().stream()
@@ -146,11 +146,9 @@ public class SecurityJwtAuthzFilterConfiguration {
    			}
    			// 登录地址不拦截 
    			ignorePatterns.add(jwtAuthcProperties.getPathPattern());
-			authzFilter.setIgnoreRequestMatcher(ignorePatterns);
-			authzFilter.setRememberMeServices(rememberMeServices);
-			authzFilter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
+			authenticationFilter.setIgnoreRequestMatcher(ignorePatterns);
 			
-	        return authzFilter;
+	        return authenticationFilter;
 	    }
 		
 		@Override
@@ -164,7 +162,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    	// 禁用缓存
 	    	http.headers().cacheControl();
 	    	// 添加JWT filter
-	    	http.addFilterBefore(jwtAuthorizationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+	    	http.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 	    }
 	    
 	    @Override
@@ -174,11 +172,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    	    		.antMatchers(jwtAuthzProperties.getPathPattern());
    	    }
 
-		@Override
-		public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-			this.eventPublisher = applicationEventPublisher;
-		}
-		
 	}
 
 }
