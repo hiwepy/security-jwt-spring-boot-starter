@@ -167,8 +167,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    @Override
    	    public void configure(WebSecurity web) throws Exception {
    	    	web.ignoring()
-   	    		.antMatchers(jwtAuthcProperties.getPathPattern())
-   	    		.antMatchers(jwtAuthzProperties.getPathPattern());
+   	    		.antMatchers(jwtAuthcProperties.getPathPattern());
    	    }
 
 	}
