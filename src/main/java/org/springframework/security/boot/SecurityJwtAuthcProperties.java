@@ -27,7 +27,14 @@ import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 @ConfigurationProperties(prefix = SecurityJwtAuthcProperties.PREFIX)
+@Getter
+@Setter
+@ToString
 public class SecurityJwtAuthcProperties {
 
 	public static final String PREFIX = "spring.security.jwt.authc";
@@ -57,93 +64,5 @@ public class SecurityJwtAuthcProperties {
 
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
-
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-
-	public String getPathPattern() {
-		return pathPattern;
-	}
-
-	public void setPathPattern(String pathPattern) {
-		this.pathPattern = pathPattern;
-	}
-
-	public String getUsernameParameter() {
-		return usernameParameter;
-	}
-
-	public void setUsernameParameter(String usernameParameter) {
-		this.usernameParameter = usernameParameter;
-	}
-
-	public String getPasswordParameter() {
-		return passwordParameter;
-	}
-
-	public void setPasswordParameter(String passwordParameter) {
-		this.passwordParameter = passwordParameter;
-	}
-
-	public boolean isContinueChainBeforeSuccessfulAuthentication() {
-		return continueChainBeforeSuccessfulAuthentication;
-	}
-
-	public void setContinueChainBeforeSuccessfulAuthentication(boolean continueChainBeforeSuccessfulAuthentication) {
-		this.continueChainBeforeSuccessfulAuthentication = continueChainBeforeSuccessfulAuthentication;
-	}
-
-	public boolean isPostOnly() {
-		return postOnly;
-	}
-
-	public void setPostOnly(boolean postOnly) {
-		this.postOnly = postOnly;
-	}
-
-	public String getRetryTimesKeyParameter() {
-		return retryTimesKeyParameter;
-	}
-
-	public void setRetryTimesKeyParameter(String retryTimesKeyParameter) {
-		this.retryTimesKeyParameter = retryTimesKeyParameter;
-	}
-
-	public String getRetryTimesKeyAttribute() {
-		return retryTimesKeyAttribute;
-	}
-
-	public void setRetryTimesKeyAttribute(String retryTimesKeyAttribute) {
-		this.retryTimesKeyAttribute = retryTimesKeyAttribute;
-	}
-
-	public int getRetryTimesWhenAccessDenied() {
-		return retryTimesWhenAccessDenied;
-	}
-
-	public void setRetryTimesWhenAccessDenied(int retryTimesWhenAccessDenied) {
-		this.retryTimesWhenAccessDenied = retryTimesWhenAccessDenied;
-	}
-
-	public boolean isUseForward() {
-		return useForward;
-	}
-
-	public void setUseForward(boolean useForward) {
-		this.useForward = useForward;
-	}
-
-	public SecurityCaptchaProperties getCaptcha() {
-		return captcha;
-	}
-
-	public void setCaptcha(SecurityCaptchaProperties captcha) {
-		this.captcha = captcha;
-	}
 
 }

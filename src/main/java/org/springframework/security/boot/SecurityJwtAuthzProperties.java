@@ -23,7 +23,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.core.Authentication;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 @ConfigurationProperties(prefix = SecurityJwtAuthzProperties.PREFIX)
+@Getter
+@Setter
+@ToString
 public class SecurityJwtAuthzProperties {
 
 	public static final String PREFIX = "spring.security.jwt.authz";
@@ -49,61 +56,5 @@ public class SecurityJwtAuthzProperties {
 	 * Defaults to <code>false</code>.
 	 */
 	private boolean continueChainBeforeSuccessfulAuthentication = true;
-
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-	
-	public String getPathPattern() {
-		return pathPattern;
-	}
-
-	public void setPathPattern(String pathPattern) {
-		this.pathPattern = pathPattern;
-	}
-	
-	public String[] getIgnorePatterns() {
-		return ignorePatterns;
-	}
-
-	public void setIgnorePatterns(String[] ignorePatterns) {
-		this.ignorePatterns = ignorePatterns;
-	}
-
-	public String getAuthorizationHeaderName() {
-		return authorizationHeaderName;
-	}
-
-	public void setAuthorizationHeaderName(String authorizationHeaderName) {
-		this.authorizationHeaderName = authorizationHeaderName;
-	}
-
-	public String getAuthorizationParamName() {
-		return authorizationParamName;
-	}
-
-	public void setAuthorizationParamName(String authorizationParamName) {
-		this.authorizationParamName = authorizationParamName;
-	}
-
-	public String getAuthorizationCookieName() {
-		return authorizationCookieName;
-	}
-
-	public void setAuthorizationCookieName(String authorizationCookieName) {
-		this.authorizationCookieName = authorizationCookieName;
-	}
-
-	public boolean isContinueChainBeforeSuccessfulAuthentication() {
-		return continueChainBeforeSuccessfulAuthentication;
-	}
-
-	public void setContinueChainBeforeSuccessfulAuthentication(boolean continueChainBeforeSuccessfulAuthentication) {
-		this.continueChainBeforeSuccessfulAuthentication = continueChainBeforeSuccessfulAuthentication;
-	}
 
 }

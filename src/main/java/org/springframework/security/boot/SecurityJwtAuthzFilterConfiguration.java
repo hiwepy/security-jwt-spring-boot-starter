@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
@@ -25,11 +26,10 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProv
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationSuccessHandler;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.RememberMeServices;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.savedrequest.RequestCache;
@@ -58,7 +58,7 @@ public class SecurityJwtAuthzFilterConfiguration {
     @Configuration
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
-    @Order(107)
+    @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 21)
 	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
     	private final AuthenticationManager authenticationManager;
@@ -151,24 +151,19 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    }
 		
 		@Override
-	    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		public void configure(AuthenticationManagerBuilder auth) throws Exception {
 	        auth.authenticationProvider(authorizationProvider);
 	    }
 
 	    @Override
-	    protected void configure(HttpSecurity http) throws Exception {
+		public void configure(HttpSecurity http) throws Exception {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
 	    	// 禁用缓存
 	    	http.headers().cacheControl();
 	    	// 添加JWT filter
-	    	http.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+	    	http.antMatcher(jwtAuthzProperties.getPathPattern())
+	    		.addFilterBefore(authenticationProcessingFilter(), AnonymousAuthenticationFilter.class);
 	    }
-	    
-	    @Override
-   	    public void configure(WebSecurity web) throws Exception {
-   	    	web.ignoring()
-   	    		.antMatchers(jwtAuthcProperties.getPathPattern());
-   	    }
 
 	}
 
