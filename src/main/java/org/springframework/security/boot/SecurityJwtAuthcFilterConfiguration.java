@@ -40,6 +40,7 @@ import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthentica
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -322,6 +323,10 @@ public class SecurityJwtAuthcFilterConfiguration {
    	        	http.csrf().disable();
    	        }
 	    	super.configure(http);
+	    }
+	    
+	    @Override
+	    public void configure(WebSecurity web) throws Exception {
 	    }
 		
 	}

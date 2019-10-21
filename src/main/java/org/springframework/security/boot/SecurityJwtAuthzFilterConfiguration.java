@@ -29,6 +29,7 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProv
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationSuccessHandler;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -61,7 +62,7 @@ public class SecurityJwtAuthzFilterConfiguration {
     @Configuration
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
-    @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 30)
+    @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 60)
 	static class JwtAuthzWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
 
     	private final SecurityBizProperties bizProperties;
@@ -206,7 +207,11 @@ public class SecurityJwtAuthzFilterConfiguration {
 
 	    	super.configure(http);
 	    }
-
+	    
+	    @Override
+	    public void configure(WebSecurity web) throws Exception {
+	    }
+	    
 	}
 
 }
