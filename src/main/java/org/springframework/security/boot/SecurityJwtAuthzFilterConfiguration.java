@@ -121,8 +121,13 @@ public class SecurityJwtAuthzFilterConfiguration {
    			this.sessionInformationExpiredStrategy = sessionInformationExpiredStrategyProvider.getIfAvailable();
    			
 		}
+		
+		@Override
+		protected AuthenticationManager authenticationManager() throws Exception {
+			return authenticationManager == null ? super.authenticationManager() : authenticationManager;
+		}
 
-	    public JwtAuthorizationProcessingFilter authenticationProcessingFilter() {
+	    public JwtAuthorizationProcessingFilter authenticationProcessingFilter() throws Exception {
 	    	
 	    	JwtAuthorizationProcessingFilter authenticationFilter = new JwtAuthorizationProcessingFilter();
 			
@@ -131,8 +136,10 @@ public class SecurityJwtAuthzFilterConfiguration {
 			 */
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 			
+			
+			
 			map.from(bizProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
-			map.from(authenticationManager).to(authenticationFilter::setAuthenticationManager);
+			map.from(authenticationManager()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authorizationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authorizationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
 			map.from(jwtAuthzProperties.getAuthorizationCookieName()).to(authenticationFilter::setAuthorizationCookieName);

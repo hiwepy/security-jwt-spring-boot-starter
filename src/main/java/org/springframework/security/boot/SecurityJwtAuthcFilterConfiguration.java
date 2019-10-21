@@ -213,6 +213,10 @@ public class SecurityJwtAuthcFilterConfiguration {
    			
 		}
 
+		@Override
+		protected AuthenticationManager authenticationManager() throws Exception {
+			return authenticationManager == null ? super.authenticationManager() : authenticationManager;
+		}
 
 		public JwtAuthenticationProcessingFilter authenticationProcessingFilter() throws Exception {
 	    	
@@ -225,7 +229,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 			
 			map.from(bizProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
 			
-			map.from(authenticationManager).to(authenticationFilter::setAuthenticationManager);
+			map.from(authenticationManager()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authenticationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
 			
