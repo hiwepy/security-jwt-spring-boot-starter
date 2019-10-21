@@ -26,7 +26,6 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProv
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationSuccessHandler;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.RememberMeServices;
@@ -59,7 +58,7 @@ public class SecurityJwtAuthzFilterConfiguration {
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
     @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 21)
-	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+	static class JwtAuthzWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
 
     	private final AuthenticationManager authenticationManager;
 	    private final RememberMeServices rememberMeServices;
@@ -94,6 +93,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider
 				
 			) {
+			
+			super(bizProperties);
 			
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
@@ -153,6 +154,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 		@Override
 		public void configure(AuthenticationManagerBuilder auth) throws Exception {
 	        auth.authenticationProvider(authorizationProvider);
+	        super.configure(auth);
 	    }
 
 	    @Override
@@ -163,6 +165,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    	// 添加JWT filter
 	    	http.antMatcher(jwtAuthzProperties.getPathPattern())
 	    		.addFilterBefore(authenticationProcessingFilter(), AnonymousAuthenticationFilter.class);
+	    	super.configure(http);
 	    }
 
 	}

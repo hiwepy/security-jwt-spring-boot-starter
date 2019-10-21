@@ -26,7 +26,6 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthenticationPro
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -94,7 +93,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
     @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 20)
-	static class JwtAuthcWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
     	
     	private final AuthenticationManager authenticationManager;
 	    private final ObjectMapper objectMapper;
@@ -129,6 +128,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler
    			) {
 		    
+			super(bizProperties);
 			
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.objectMapper = objectMapperProvider.getIfAvailable();
@@ -189,6 +189,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 		@Override
 		public void configure(AuthenticationManagerBuilder auth) throws Exception {
 	        auth.authenticationProvider(authenticationProvider);
+	        super.configure(auth);
 	    }
 
 	    @Override
@@ -196,6 +197,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
 	    	http.antMatcher(jwtAuthcProperties.getPathPattern())
 	    		.addFilterBefore(authenticationProcessingFilter(), AnonymousAuthenticationFilter.class);
+	    	super.configure(http);
 	    }
 		
 	}
