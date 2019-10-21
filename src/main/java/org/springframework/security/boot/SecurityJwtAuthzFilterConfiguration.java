@@ -18,8 +18,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
+import org.springframework.security.boot.biz.JsonInvalidSessionStrategy;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
+import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
@@ -27,12 +28,13 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthorizationSucc
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
+import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
 @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
+@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
 public class SecurityJwtAuthzFilterConfiguration {
 
 	@Bean
@@ -53,24 +55,32 @@ public class SecurityJwtAuthzFilterConfiguration {
 	public JwtAuthorizationSuccessHandler jwtAuthorizationSuccessHandler() {
 		return new JwtAuthorizationSuccessHandler();
 	}
-    
+	
+	@Bean("jwtInvalidSessionStrategy")
+	public InvalidSessionStrategy jwtInvalidSessionStrategy() {
+		return new JsonInvalidSessionStrategy();
+	}
+	
     @Configuration
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
-	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
+	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
     @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 21)
 	static class JwtAuthzWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
 
-    	private final AuthenticationManager authenticationManager;
-	    private final RememberMeServices rememberMeServices;
-	    
-		private final SecurityBizProperties bizProperties;
-		private final SecurityJwtAuthcProperties jwtAuthcProperties;
+    	private final SecurityBizProperties bizProperties;
+    	private final SecurityJwtAuthcProperties jwtAuthcProperties;
     	private final SecurityJwtAuthzProperties jwtAuthzProperties;
+    	
+    	private final AuthenticationManager authenticationManager;	
  	    private final JwtAuthorizationProvider authorizationProvider;
-	    private final JwtAuthorizationSuccessHandler authorizationSuccessHandler;
-	    private final PostRequestAuthenticationFailureHandler authorizationFailureHandler;
-	    
-		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+ 	    private final JwtAuthorizationSuccessHandler authorizationSuccessHandler;
+ 	    private final PostRequestAuthenticationFailureHandler authorizationFailureHandler;
+ 	    private final InvalidSessionStrategy invalidSessionStrategy;
+     	private final RequestCache requestCache;
+     	private final RememberMeServices rememberMeServices;
+     	private final SessionRegistry sessionRegistry;
+ 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+ 		private final SessionInformationExpiredStrategy sessionInformationExpiredStrategy;
 		
 		public JwtAuthzWebSecurityConfigurerAdapter(
 				
@@ -78,36 +88,37 @@ public class SecurityJwtAuthzFilterConfiguration {
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				SecurityJwtAuthzProperties jwtAuthzProperties,
    				
-				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
-				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-   				ObjectProvider<JwtAuthorizationProvider> authenticationProvider,
+   				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
+   				ObjectProvider<JwtAuthorizationProvider> authorizationProvider,
+   				ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
    				ObjectProvider<JwtAuthorizationSuccessHandler> authorizationSuccessHandler,
-   				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+   				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+   				@Qualifier("jwtLogoutHandler") ObjectProvider<SecurityContextLogoutHandler> logoutHandlerProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
 				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
-				ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
 				ObjectProvider<SessionRegistry> sessionRegistryProvider,
 				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
-   				
-				@Qualifier("jwtSecurityContextLogoutHandler")  ObjectProvider<SecurityContextLogoutHandler> securityContextLogoutHandlerProvider
+				ObjectProvider<SessionInformationExpiredStrategy> sessionInformationExpiredStrategyProvider
 				
 			) {
 			
 			super(bizProperties);
 			
-			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
-   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
-   			
    			this.bizProperties = bizProperties;
    			this.jwtAuthcProperties = jwtAuthcProperties;
    			this.jwtAuthzProperties = jwtAuthzProperties;
    			
-   			this.authorizationProvider = authenticationProvider.getIfAvailable();
-   			this.authorizationSuccessHandler = authorizationSuccessHandler.getIfAvailable();
+   			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
+   			this.authorizationProvider = authorizationProvider.getIfAvailable();
    			this.authorizationFailureHandler = authorizationFailureHandler.getIfAvailable();
-   			
+   			this.authorizationSuccessHandler = authorizationSuccessHandler.getIfAvailable();
+   			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
+   			this.requestCache = requestCacheProvider.getIfAvailable();
+   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
+   			this.sessionRegistry = sessionRegistryProvider.getIfAvailable();
    			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
+   			this.sessionInformationExpiredStrategy = sessionInformationExpiredStrategyProvider.getIfAvailable();
    			
 		}
 
@@ -159,12 +170,34 @@ public class SecurityJwtAuthzFilterConfiguration {
 
 	    @Override
 		public void configure(HttpSecurity http) throws Exception {
-	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	// 禁用缓存
-	    	http.headers().cacheControl();
-	    	// 添加JWT filter
-	    	http.antMatcher(jwtAuthzProperties.getPathPattern())
-	    		.addFilterBefore(authenticationProcessingFilter(), AnonymousAuthenticationFilter.class);
+	    	
+	    	// Session 管理器配置参数
+   	    	SecuritySessionMgtProperties sessionMgt = bizProperties.getSessionMgt();
+   	    	
+   	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
+	    	http.headers().cacheControl(); // 禁用缓存
+	    	
+   		    // Session 管理器配置
+   	    	http.sessionManagement()
+   	    		.enableSessionUrlRewriting(sessionMgt.isEnableSessionUrlRewriting())
+   	    		.invalidSessionStrategy(invalidSessionStrategy)
+   	    		.maximumSessions(sessionMgt.getMaximumSessions())
+   	    		.maxSessionsPreventsLogin(sessionMgt.isMaxSessionsPreventsLogin())
+   	    		.expiredSessionStrategy(sessionInformationExpiredStrategy)
+   				.sessionRegistry(sessionRegistry)
+   				.and()
+   	    		.sessionAuthenticationErrorUrl(sessionMgt.getFailureUrl())
+   	    		.sessionAuthenticationFailureHandler(authorizationFailureHandler)
+   	    		.sessionAuthenticationStrategy(sessionAuthenticationStrategy)
+   	    		.sessionCreationPolicy(sessionMgt.getCreationPolicy())
+   	        	// Request 缓存配置
+   	        	.and()
+   	    		.requestCache()
+   	        	.requestCache(requestCache)
+   	        	.and()
+   	        	.antMatcher(jwtAuthzProperties.getPathPattern())
+   	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
+
 	    	super.configure(http);
 	    }
 

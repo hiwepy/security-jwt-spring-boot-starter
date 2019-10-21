@@ -15,17 +15,12 @@
  */
 package org.springframework.security.boot;
 
-import javax.servlet.FilterChain;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationProcessingFilter;
+import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
 import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.boot.biz.property.SecurityCsrfProperties;
+import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -35,34 +30,18 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class SecurityJwtAuthcProperties {
+public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 
 	public static final String PREFIX = "spring.security.jwt.authc";
 
 	/** Whether Enable JWT Authentication. */
 	private boolean enabled = false;
-
-	/** Authorization Path Pattern */
-	private String pathPattern = "/login/jwt";
-	/** the username parameter name. Defaults to "username". */
-	private String usernameParameter = UsernamePasswordAuthenticationFilter.SPRING_SECURITY_FORM_USERNAME_KEY;
-	/** the password parameter name. Defaults to "password". */
-	private String passwordParameter = UsernamePasswordAuthenticationFilter.SPRING_SECURITY_FORM_PASSWORD_KEY;
-	/**
-	 * Indicates if the filter chain should be continued prior to delegation to
-	 * {@link #successfulAuthentication(HttpServletRequest, HttpServletResponse, FilterChain, Authentication)}
-	 * , which may be useful in certain environment (such as Tapestry applications).
-	 * Defaults to <code>false</code>.
-	 */
-	private boolean continueChainBeforeSuccessfulAuthentication = false;
-	private boolean postOnly = true;
-	private String retryTimesKeyParameter = AuthenticatingFailureCounter.DEFAULT_RETRY_TIMES_KEY_PARAM_NAME;
-	private String retryTimesKeyAttribute = PostRequestAuthenticationProcessingFilter.DEFAULT_RETRY_TIMES_KEY_ATTRIBUTE_NAME;
-	/** Maximum number of retry to login . */
-	private int retryTimesWhenAccessDenied = 3;
-	private boolean useForward = false;
-
+	
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
-
+	@NestedConfigurationProperty
+	private SecurityCsrfProperties csrf = new SecurityCsrfProperties();
+	@NestedConfigurationProperty
+	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
+	
 }

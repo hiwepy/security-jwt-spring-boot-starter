@@ -1,6 +1,9 @@
 package org.springframework.security.boot;
 
+import java.util.List;
+
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -16,21 +19,36 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
+import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
+import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
+import org.springframework.security.boot.biz.property.SecurityCsrfProperties;
+import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
+import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
+import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
+import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
+import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationSuccessHandler;
+import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.session.InvalidSessionStrategy;
+import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.vindell.jwt.JwtPayload;
@@ -38,14 +56,44 @@ import com.github.vindell.jwt.JwtPayload;
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
 @ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityJwtAuthcProperties.class })
+@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
 public class SecurityJwtAuthcFilterConfiguration {
 
-    /*
-	 *################################################################### 
-	 *# Jwt认证 (authentication) 配置
-	 *###################################################################
-	 */
+	@Bean("jwtAuthenticationSuccessHandler")
+	public PostRequestAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(
+			SecurityBizProperties bizProperties,
+			SecurityJwtAuthcProperties jwtAuthcProperties,
+			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
+			@Autowired(required = false) List<MatchedAuthenticationSuccessHandler> successHandlers) {
+		
+		PostRequestAuthenticationSuccessHandler successHandler = new PostRequestAuthenticationSuccessHandler(
+				authenticationListeners, successHandlers);
+		
+		successHandler.setDefaultTargetUrl(jwtAuthcProperties.getSuccessUrl());
+		successHandler.setStateless(bizProperties.isStateless());
+		successHandler.setTargetUrlParameter(jwtAuthcProperties.getTargetUrlParameter());
+		successHandler.setUseReferer(jwtAuthcProperties.isUseReferer());
+		
+		return successHandler;
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean
+	public JwtMatchedAuthcOrAuthzFailureHandler jwtMatchedAuthcOrAuthzFailureHandler() {
+		return new JwtMatchedAuthcOrAuthzFailureHandler();
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean
+	public JwtMatchedAuthenticationEntryPoint jwtMatchedAuthenticationEntryPoint() {
+		return new JwtMatchedAuthenticationEntryPoint();
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public JwtMatchedAuthenticationSuccessHandler jwtMatchedAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository) {
+		return new JwtMatchedAuthenticationSuccessHandler(payloadRepository);
+	}
 
 	@Bean
 	@ConditionalOnMissingBean
@@ -84,58 +132,72 @@ public class SecurityJwtAuthcFilterConfiguration {
 	
 	@Configuration
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
-	@EnableConfigurationProperties({ SecurityJwtProperties.class, SecurityBizProperties.class })
+	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
     @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 20)
 	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
     	
-    	private final AuthenticationManager authenticationManager;
-	    private final ObjectMapper objectMapper;
-	    private final RememberMeServices rememberMeServices;
-	    
-	    private final SecurityBizProperties bizProperties;
+		private final SecurityBizProperties bizProperties;
 		private final SecurityJwtAuthcProperties jwtAuthcProperties;
- 	    private final JwtAuthenticationProvider authenticationProvider;
- 	    private final PostRequestAuthenticationSuccessHandler authenticationSuccessHandler;
+		
+		private final AuthenticationManager authenticationManager;
+	    private final AuthenticatingFailureCounter authenticatingFailureCounter;
+	    private final JwtAuthenticationProvider authenticationProvider;
+	    private final PostRequestAuthenticationSuccessHandler authenticationSuccessHandler;
 	    private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
- 	    private final CaptchaResolver captchaResolver;
-
-		private final AuthenticatingFailureCounter authenticatingFailureCounter;
+	    private final CaptchaResolver captchaResolver;
+	    private final CsrfTokenRepository csrfTokenRepository;
+	    private final InvalidSessionStrategy invalidSessionStrategy;
+	    private final SecurityContextLogoutHandler logoutHandler;
+	    private final ObjectMapper objectMapper;
+    	private final RequestCache requestCache;
+    	private final RememberMeServices rememberMeServices;
+    	private final SessionRegistry sessionRegistry;
 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+		private final SessionInformationExpiredStrategy sessionInformationExpiredStrategy;
 		
 		public JwtAuthcWebSecurityConfigurerAdapter(
 				
 				SecurityBizProperties bizProperties,
-   				SecurityJwtProperties jwtProperties,
    				SecurityJwtAuthcProperties jwtAuthcProperties,
    				
-				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
-				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-   				ObjectProvider<CaptchaResolver> captchaResolverProvider,
+   				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
    				ObjectProvider<JwtAuthenticationProvider> authenticationProvider,
-   				ObjectProvider<ObjectMapper> objectMapperProvider,
+   				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
    				ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
-   				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
-   				ObjectProvider<SessionRegistry> sessionRegistryProvider,
-   				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
-   				
-   				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler
+   				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
+   				ObjectProvider<CaptchaResolver> captchaResolverProvider,
+   				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
+   				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
+   				@Qualifier("jwtLogoutHandler") ObjectProvider<SecurityContextLogoutHandler> logoutHandlerProvider,
+   				ObjectProvider<ObjectMapper> objectMapperProvider,
+				ObjectProvider<RequestCache> requestCacheProvider,
+				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
+				ObjectProvider<SessionRegistry> sessionRegistryProvider,
+				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
+				ObjectProvider<SessionInformationExpiredStrategy> sessionInformationExpiredStrategyProvider
+				
    			) {
 		    
 			super(bizProperties);
-			
-			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
-   			this.objectMapper = objectMapperProvider.getIfAvailable();
-   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			
    			this.bizProperties = bizProperties;
    			this.jwtAuthcProperties = jwtAuthcProperties;
-   			this.authenticationProvider = authenticationProvider.getIfAvailable();
-   			this.authenticationSuccessHandler = authenticationSuccessHandler.getIfAvailable();
-   			this.authenticationFailureHandler = authenticationFailureHandler.getIfAvailable();
-   			this.captchaResolver = captchaResolverProvider.getIfAvailable();
    			
+   			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
+   			this.authenticationProvider = authenticationProvider.getIfAvailable();
    			this.authenticatingFailureCounter = authenticatingFailureCounter.getIfAvailable();
+   			this.authenticationFailureHandler = authenticationFailureHandler.getIfAvailable();
+   			this.authenticationSuccessHandler = authenticationSuccessHandler.getIfAvailable();
+   			this.captchaResolver = captchaResolverProvider.getIfAvailable();
+   			this.csrfTokenRepository = csrfTokenRepositoryProvider.getIfAvailable();
+   			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
+   			this.logoutHandler = logoutHandlerProvider.getIfAvailable();
+   			this.objectMapper = objectMapperProvider.getIfAvailable();
+   			this.requestCache = requestCacheProvider.getIfAvailable();
+   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
+   			this.sessionRegistry = sessionRegistryProvider.getIfAvailable();
    			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
+   			this.sessionInformationExpiredStrategy = sessionInformationExpiredStrategyProvider.getIfAvailable();
    			
 		}
 
@@ -187,9 +249,56 @@ public class SecurityJwtAuthcFilterConfiguration {
 
 	    @Override
 		public void configure(HttpSecurity http) throws Exception {
-	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	http.antMatcher(jwtAuthcProperties.getPathPattern())
-	    		.addFilterBefore(authenticationProcessingFilter(), AnonymousAuthenticationFilter.class);
+	    	
+	    	// Session 管理器配置参数
+   	    	SecuritySessionMgtProperties sessionMgt = bizProperties.getSessionMgt();
+   	    	// Session 注销配置参数
+   	    	SecurityLogoutProperties logout = jwtAuthcProperties.getLogout();
+   	    	
+   	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
+	    	http.headers().cacheControl(); // 禁用缓存
+	    	
+   		    // Session 管理器配置
+   	    	http.sessionManagement()
+   	    		.enableSessionUrlRewriting(sessionMgt.isEnableSessionUrlRewriting())
+   	    		.invalidSessionStrategy(invalidSessionStrategy)
+   	    		.invalidSessionUrl(logout.getLogoutUrl())
+   	    		.maximumSessions(sessionMgt.getMaximumSessions())
+   	    		.maxSessionsPreventsLogin(sessionMgt.isMaxSessionsPreventsLogin())
+   	    		.expiredSessionStrategy(sessionInformationExpiredStrategy)
+   				.expiredUrl(logout.getLogoutUrl())
+   				.sessionRegistry(sessionRegistry)
+   				.and()
+   	    		.sessionAuthenticationErrorUrl(sessionMgt.getFailureUrl())
+   	    		.sessionAuthenticationFailureHandler(authenticationFailureHandler)
+   	    		.sessionAuthenticationStrategy(sessionAuthenticationStrategy)
+   	    		.sessionCreationPolicy(sessionMgt.getCreationPolicy())
+   	    		// Session 注销配置
+   	    		.and()
+   	    		.logout()
+   	    		.logoutUrl(logout.getPathPatterns())
+   	    		.logoutSuccessUrl(logout.getLogoutSuccessUrl())
+   	    		.addLogoutHandler(logoutHandler)
+   	    		.clearAuthentication(logout.isClearAuthentication())
+   	    		.invalidateHttpSession(logout.isInvalidateHttpSession())
+   	        	// Request 缓存配置
+   	        	.and()
+   	    		.requestCache()
+   	        	.requestCache(requestCache)
+   	        	.and()
+   	        	.antMatcher(jwtAuthcProperties.getPathPattern())
+   	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
+   	    	
+   	    	// CSRF 配置
+   	    	SecurityCsrfProperties csrf = jwtAuthcProperties.getCsrf();
+   	    	if(csrf.isEnabled()) {
+   	       		http.csrf()
+   				   	.csrfTokenRepository(csrfTokenRepository)
+   				   	.ignoringAntMatchers(StringUtils.tokenizeToStringArray(csrf.getIgnoringAntMatchers()))
+   					.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+   	        } else {
+   	        	http.csrf().disable();
+   	        }
 	    	super.configure(http);
 	    }
 		
