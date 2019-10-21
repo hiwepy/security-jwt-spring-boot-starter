@@ -1,6 +1,7 @@
 package org.springframework.security.boot;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,10 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -130,6 +134,11 @@ public class SecurityJwtAuthcFilterConfiguration {
 		return failureCounter;
 	}
 	
+	@Bean("jwtLogoutSuccessHandler")
+	public LogoutSuccessHandler jwtLogoutSuccessHandler() {
+		return new HttpStatusReturningLogoutSuccessHandler();
+	}
+	
 	@Configuration
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
@@ -147,7 +156,8 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    private final CaptchaResolver captchaResolver;
 	    private final CsrfTokenRepository csrfTokenRepository;
 	    private final InvalidSessionStrategy invalidSessionStrategy;
-	    private final SecurityContextLogoutHandler logoutHandler;
+	    private final LogoutSuccessHandler logoutSuccessHandler;
+	    private final List<LogoutHandler> logoutHandlers;
 	    private final ObjectMapper objectMapper;
     	private final RequestCache requestCache;
     	private final RememberMeServices rememberMeServices;
@@ -168,7 +178,8 @@ public class SecurityJwtAuthcFilterConfiguration {
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
    				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
-   				@Qualifier("jwtLogoutHandler") ObjectProvider<SecurityContextLogoutHandler> logoutHandlerProvider,
+   				@Qualifier("jwtLogoutSuccessHandler") ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider,
+   				ObjectProvider<LogoutHandler> logoutHandlerProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
 				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
@@ -191,7 +202,8 @@ public class SecurityJwtAuthcFilterConfiguration {
    			this.captchaResolver = captchaResolverProvider.getIfAvailable();
    			this.csrfTokenRepository = csrfTokenRepositoryProvider.getIfAvailable();
    			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
-   			this.logoutHandler = logoutHandlerProvider.getIfAvailable();
+   			this.logoutSuccessHandler = logoutSuccessHandlerProvider.getIfAvailable();
+   			this.logoutHandlers = logoutHandlerProvider.stream().collect(Collectors.toList());
    			this.objectMapper = objectMapperProvider.getIfAvailable();
    			this.requestCache = requestCacheProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
@@ -277,8 +289,8 @@ public class SecurityJwtAuthcFilterConfiguration {
    	    		.and()
    	    		.logout()
    	    		.logoutUrl(logout.getPathPatterns())
-   	    		.logoutSuccessUrl(logout.getLogoutSuccessUrl())
-   	    		.addLogoutHandler(logoutHandler)
+   	    		.logoutSuccessHandler(logoutSuccessHandler)
+   	    		.addLogoutHandler(new CompositeLogoutHandler(logoutHandlers))
    	    		.clearAuthentication(logout.isClearAuthentication())
    	    		.invalidateHttpSession(logout.isInvalidateHttpSession())
    	        	// Request 缓存配置
