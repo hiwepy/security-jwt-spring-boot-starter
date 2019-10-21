@@ -1,6 +1,7 @@
 package org.springframework.security.boot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.boot.biz.JsonInvalidSessionStrategy;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
@@ -117,8 +119,12 @@ public class SecurityJwtAuthzFilterConfiguration {
 		}
 		
 		@Override
-		protected AuthenticationManager authenticationManager() throws Exception {
-			return authenticationManager == null ? super.authenticationManager() : authenticationManager;
+		public AuthenticationManager authenticationManagerBean() throws Exception {
+   			AuthenticationManager parentManager = authenticationManager == null ? super.authenticationManagerBean() : authenticationManager;
+			ProviderManager authenticationManager = new ProviderManager( Arrays.asList(authorizationProvider), parentManager);
+			// 不擦除认证密码，擦除会导致TokenBasedRememberMeServices因为找不到Credentials再调用UserDetailsService而抛出UsernameNotFoundException
+			authenticationManager.setEraseCredentialsAfterAuthentication(false);
+			return authenticationManager;
 		}
 
 	    public JwtAuthorizationProcessingFilter authenticationProcessingFilter() throws Exception {
