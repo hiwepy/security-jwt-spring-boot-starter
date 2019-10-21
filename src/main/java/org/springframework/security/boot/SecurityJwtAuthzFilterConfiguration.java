@@ -137,9 +137,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 			
 			
-			
 			map.from(bizProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
-			map.from(authenticationManager()).to(authenticationFilter::setAuthenticationManager);
+			map.from(authenticationManagerBean()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authorizationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authorizationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
 			map.from(jwtAuthzProperties.getAuthorizationCookieName()).to(authenticationFilter::setAuthorizationCookieName);
