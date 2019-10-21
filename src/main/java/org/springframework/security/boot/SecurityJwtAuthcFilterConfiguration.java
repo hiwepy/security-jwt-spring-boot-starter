@@ -19,7 +19,6 @@ import org.springframework.security.boot.biz.authentication.AuthenticatingFailur
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
-import org.springframework.security.boot.biz.authentication.captcha.NullCaptchaResolver;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
@@ -48,12 +47,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 	 *###################################################################
 	 */
 
-    @Bean
-	@ConditionalOnMissingBean 
-	public CaptchaResolver captchaResolver() {
-		return new NullCaptchaResolver();
-	}
-    
 	@Bean
 	@ConditionalOnMissingBean
 	public JwtPayloadRepository payloadRepository() {
