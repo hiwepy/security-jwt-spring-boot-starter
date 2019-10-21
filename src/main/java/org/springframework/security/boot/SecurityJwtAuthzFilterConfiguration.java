@@ -56,11 +56,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 		return new JwtAuthorizationSuccessHandler();
 	}
 	
-	@Bean("jwtInvalidSessionStrategy")
-	public InvalidSessionStrategy jwtInvalidSessionStrategy() {
-		return new JsonInvalidSessionStrategy();
-	}
-	
     @Configuration
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
@@ -92,7 +87,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    				ObjectProvider<JwtAuthorizationProvider> authorizationProvider,
    				ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
    				ObjectProvider<JwtAuthorizationSuccessHandler> authorizationSuccessHandler,
-   				@Qualifier("jwtInvalidSessionStrategy") ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
    				@Qualifier("jwtLogoutHandler") ObjectProvider<SecurityContextLogoutHandler> logoutHandlerProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
@@ -113,7 +107,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    			this.authorizationProvider = authorizationProvider.getIfAvailable();
    			this.authorizationFailureHandler = authorizationFailureHandler.getIfAvailable();
    			this.authorizationSuccessHandler = authorizationSuccessHandler.getIfAvailable();
-   			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
+   			this.invalidSessionStrategy = new JsonInvalidSessionStrategy();
    			this.requestCache = requestCacheProvider.getIfAvailable();
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			this.sessionRegistry = sessionRegistryProvider.getIfAvailable();
