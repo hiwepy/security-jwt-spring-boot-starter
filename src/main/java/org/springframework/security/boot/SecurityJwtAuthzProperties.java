@@ -43,8 +43,7 @@ public class SecurityJwtAuthzProperties {
 	private String[] ignorePatterns = new String[] {"/login/jwt"};
 	
 	/**
-	 * Specifies the name of the header on where to find the token (i.e.
-	 * X-Authorization).
+	 * Specifies the name of the header on where to find the token (i.e. X-Authorization).
 	 */
 	private String authorizationHeaderName = JwtAuthorizationProcessingFilter.AUTHORIZATION_HEADER;
 	private String authorizationParamName = JwtAuthorizationProcessingFilter.AUTHORIZATION_PARAM;
