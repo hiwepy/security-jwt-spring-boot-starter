@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -20,9 +19,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
-import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
-import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationEntryPoint;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationFailureHandler;
@@ -46,7 +43,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -64,34 +60,16 @@ import com.github.vindell.jwt.JwtPayload;
 @EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
 public class SecurityJwtAuthcFilterConfiguration {
 
-	@Bean("jwtAuthenticationSuccessHandler")
-	public PostRequestAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(
-			SecurityBizProperties bizProperties,
-			SecurityJwtAuthcProperties authcProperties,
-			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
-			@Autowired(required = false) List<MatchedAuthenticationSuccessHandler> successHandlers) {
-		
-		PostRequestAuthenticationSuccessHandler successHandler = new PostRequestAuthenticationSuccessHandler(
-				authenticationListeners, successHandlers);
-		
-		successHandler.setDefaultTargetUrl(authcProperties.getSuccessUrl());
-		successHandler.setStateless(bizProperties.isStateless());
-		successHandler.setTargetUrlParameter(authcProperties.getTargetUrlParameter());
-		successHandler.setUseReferer(authcProperties.isUseReferer());
-		
-		return successHandler;
+	@Bean
+	@ConditionalOnMissingBean
+	public JwtMatchedAuthenticationEntryPoint jwtMatchedAuthenticationEntryPoint() {
+		return new JwtMatchedAuthenticationEntryPoint();
 	}
 	
 	@Bean
 	@ConditionalOnMissingBean
 	public JwtMatchedAuthcOrAuthzFailureHandler jwtMatchedAuthcOrAuthzFailureHandler() {
 		return new JwtMatchedAuthcOrAuthzFailureHandler();
-	}
-	
-	@Bean
-	@ConditionalOnMissingBean
-	public JwtMatchedAuthenticationEntryPoint jwtMatchedAuthenticationEntryPoint() {
-		return new JwtMatchedAuthenticationEntryPoint();
 	}
 
 	@Bean
@@ -126,18 +104,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@Bean
 	public JwtAuthenticationProvider jwtAuthenticationProvider(UserDetailsServiceAdapter userDetailsService, PasswordEncoder passwordEncoder) {
 		return new JwtAuthenticationProvider(userDetailsService, passwordEncoder);
-	}
-    
-	@Bean("jwtAuthenticatingFailureCounter")
-	public AuthenticatingFailureCounter jwtAuthenticatingFailureCounter(SecurityJwtAuthcProperties authcProperties) {
-		AuthenticatingFailureRequestCounter  failureCounter = new AuthenticatingFailureRequestCounter();
-		failureCounter.setRetryTimesKeyParameter(authcProperties.getRetryTimesKeyParameter());
-		return failureCounter;
-	}
-	
-	@Bean("jwtcasLogoutSuccessHandler")
-	public LogoutSuccessHandler authenticationSuccessHandler() {
-		return new HttpStatusReturningLogoutSuccessHandler();
 	}
 	
 	@Configuration
@@ -235,8 +201,8 @@ public class SecurityJwtAuthcFilterConfiguration {
 			map.from(authcProperties.getPasswordParameter()).to(authenticationFilter::setPasswordParameter);
 			map.from(authcProperties.isPostOnly()).to(authenticationFilter::setPostOnly);
 			// 登陆失败重试次数，超出限制需要输入验证码
-			map.from(authcProperties.getRetryTimesKeyAttribute()).to(authenticationFilter::setRetryTimesKeyAttribute);
-			map.from(authcProperties.getRetryTimesWhenAccessDenied()).to(authenticationFilter::setRetryTimesWhenAccessDenied);
+			map.from(authcProperties.getRetry().getRetryTimesKeyAttribute()).to(authenticationFilter::setRetryTimesKeyAttribute);
+			map.from(authcProperties.getRetry().getRetryTimesWhenAccessDenied()).to(authenticationFilter::setRetryTimesWhenAccessDenied);
 			
 			map.from(rememberMeServices).to(authenticationFilter::setRememberMeServices);
 			map.from(sessionAuthenticationStrategy).to(authenticationFilter::setSessionAuthenticationStrategy);
@@ -253,9 +219,6 @@ public class SecurityJwtAuthcFilterConfiguration {
    	    	// Session 注销配置参数
    	    	SecurityLogoutProperties logout = authcProperties.getLogout();
    	    	
-   	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	http.headers().cacheControl(); // 禁用缓存
-	    	
    		    // Session 管理器配置
    	    	http.sessionManagement()
    	    		.enableSessionUrlRewriting(sessionMgt.isEnableSessionUrlRewriting())
