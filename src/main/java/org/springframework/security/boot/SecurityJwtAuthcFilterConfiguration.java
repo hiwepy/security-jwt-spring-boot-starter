@@ -1,6 +1,5 @@
 package org.springframework.security.boot;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,13 +18,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureRequestCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
-import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
+import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationEntryPoint;
+import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
@@ -36,15 +36,16 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthenticationPro
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationSuccessHandler;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -66,17 +67,17 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@Bean("jwtAuthenticationSuccessHandler")
 	public PostRequestAuthenticationSuccessHandler jwtAuthenticationSuccessHandler(
 			SecurityBizProperties bizProperties,
-			SecurityJwtAuthcProperties jwtAuthcProperties,
+			SecurityJwtAuthcProperties authcProperties,
 			@Autowired(required = false) List<AuthenticationListener> authenticationListeners,
 			@Autowired(required = false) List<MatchedAuthenticationSuccessHandler> successHandlers) {
 		
 		PostRequestAuthenticationSuccessHandler successHandler = new PostRequestAuthenticationSuccessHandler(
 				authenticationListeners, successHandlers);
 		
-		successHandler.setDefaultTargetUrl(jwtAuthcProperties.getSuccessUrl());
+		successHandler.setDefaultTargetUrl(authcProperties.getSuccessUrl());
 		successHandler.setStateless(bizProperties.isStateless());
-		successHandler.setTargetUrlParameter(jwtAuthcProperties.getTargetUrlParameter());
-		successHandler.setUseReferer(jwtAuthcProperties.isUseReferer());
+		successHandler.setTargetUrlParameter(authcProperties.getTargetUrlParameter());
+		successHandler.setUseReferer(authcProperties.isUseReferer());
 		
 		return successHandler;
 	}
@@ -128,14 +129,14 @@ public class SecurityJwtAuthcFilterConfiguration {
 	}
     
 	@Bean("jwtAuthenticatingFailureCounter")
-	public AuthenticatingFailureCounter jwtAuthenticatingFailureCounter(SecurityJwtAuthcProperties jwtAuthcProperties) {
+	public AuthenticatingFailureCounter jwtAuthenticatingFailureCounter(SecurityJwtAuthcProperties authcProperties) {
 		AuthenticatingFailureRequestCounter  failureCounter = new AuthenticatingFailureRequestCounter();
-		failureCounter.setRetryTimesKeyParameter(jwtAuthcProperties.getRetryTimesKeyParameter());
+		failureCounter.setRetryTimesKeyParameter(authcProperties.getRetryTimesKeyParameter());
 		return failureCounter;
 	}
 	
-	@Bean("jwtLogoutSuccessHandler")
-	public LogoutSuccessHandler jwtLogoutSuccessHandler() {
+	@Bean("jwtcasLogoutSuccessHandler")
+	public LogoutSuccessHandler authenticationSuccessHandler() {
 		return new HttpStatusReturningLogoutSuccessHandler();
 	}
 	
@@ -145,18 +146,16 @@ public class SecurityJwtAuthcFilterConfiguration {
     @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 9)
 	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
     	
-		private final SecurityBizProperties bizProperties;
 		private final SecurityJwtAuthcProperties authcProperties;
 		
-		private final AuthenticationManager authenticationManager;
-	    private final AuthenticatingFailureCounter authenticatingFailureCounter;
-	    private final JwtAuthenticationProvider authenticationProvider;
-	    private final PostRequestAuthenticationSuccessHandler authenticationSuccessHandler;
-	    private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
+		private final AuthenticatingFailureCounter authenticatingFailureCounter;
+	    private final AuthenticationEntryPoint authenticationEntryPoint;
+	    private final AuthenticationSuccessHandler authenticationSuccessHandler;
+	    private final AuthenticationFailureHandler authenticationFailureHandler;
 	    private final CaptchaResolver captchaResolver;
 	    private final InvalidSessionStrategy invalidSessionStrategy;
 	    private final LogoutSuccessHandler logoutSuccessHandler;
-	    private final List<LogoutHandler> logoutHandlers;
+	    private final LogoutHandler logoutHandler;
 	    private final ObjectMapper objectMapper;
     	private final RequestCache requestCache;
     	private final RememberMeServices rememberMeServices;
@@ -167,57 +166,44 @@ public class SecurityJwtAuthcFilterConfiguration {
 		public JwtAuthcWebSecurityConfigurerAdapter(
 				
 				SecurityBizProperties bizProperties,
-   				SecurityJwtAuthcProperties jwtAuthcProperties,
+   				SecurityJwtAuthcProperties authcProperties,
    				
+   				ObjectProvider<AuthenticationProvider> authenticationProvider,
    				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
-   				ObjectProvider<JwtAuthenticationProvider> authenticationProvider,
+   				ObjectProvider<AuthenticationListener> authenticationListenerProvider,
    				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounter,
-   				ObjectProvider<PostRequestAuthenticationFailureHandler> authenticationFailureHandler,
-   				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
+   				ObjectProvider<MatchedAuthenticationEntryPoint> authenticationEntryPointProvider,
+   				ObjectProvider<MatchedAuthenticationSuccessHandler> authenticationSuccessHandlerProvider,
+   				ObjectProvider<MatchedAuthenticationFailureHandler> authenticationFailureHandlerProvider,
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
    				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
    				@Qualifier("jwtLogoutSuccessHandler") ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider,
    				ObjectProvider<LogoutHandler> logoutHandlerProvider,
-   				ObjectProvider<ObjectMapper> objectMapperProvider,
-				ObjectProvider<RequestCache> requestCacheProvider,
-				ObjectProvider<RememberMeServices> rememberMeServicesProvider,
-				ObjectProvider<SessionRegistry> sessionRegistryProvider,
-				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider,
-				ObjectProvider<SessionInformationExpiredStrategy> sessionInformationExpiredStrategyProvider
+   				ObjectProvider<ObjectMapper> objectMapperProvider
 				
    			) {
 		    
-			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable());
+			super(bizProperties, authcProperties, authenticationProvider.stream().collect(Collectors.toList()),
+					authenticationManagerProvider.getIfAvailable());
    			
-   			this.bizProperties = bizProperties;
-   			this.authcProperties = jwtAuthcProperties;
+   			this.authcProperties = authcProperties;
    			
-   			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
-   			this.authenticationProvider = authenticationProvider.getIfAvailable();
-   			this.authenticatingFailureCounter = authenticatingFailureCounter.getIfAvailable();
-   			this.authenticationFailureHandler = authenticationFailureHandler.getIfAvailable();
-   			this.authenticationSuccessHandler = authenticationSuccessHandler.getIfAvailable();
+   			this.authenticatingFailureCounter = super.authenticatingFailureCounter();
+   			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
+   			this.authenticationEntryPoint = super.authenticationEntryPoint(authenticationEntryPointProvider.stream().collect(Collectors.toList()));
+   			this.authenticationSuccessHandler = super.authenticationSuccessHandler(authenticationListeners, authenticationSuccessHandlerProvider.stream().collect(Collectors.toList()));
+   			this.authenticationFailureHandler = super.authenticationFailureHandler(authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
    			this.captchaResolver = captchaResolverProvider.getIfAvailable();
-   			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
-   			this.logoutSuccessHandler = logoutSuccessHandlerProvider.getIfAvailable();
-   			this.logoutHandlers = logoutHandlerProvider.stream().collect(Collectors.toList());
+   			this.invalidSessionStrategy = super.invalidSessionStrategy();
+   			this.logoutSuccessHandler = super.logoutSuccessHandler();
+   			this.logoutHandler = super.logoutHandler(logoutHandlerProvider.stream().collect(Collectors.toList()));
    			this.objectMapper = objectMapperProvider.getIfAvailable();
-   			this.requestCache = requestCacheProvider.getIfAvailable();
-   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
-   			this.sessionRegistry = sessionRegistryProvider.getIfAvailable();
-   			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
-   			this.sessionInformationExpiredStrategy = sessionInformationExpiredStrategyProvider.getIfAvailable();
-   			
-		}
-
-		@Override
-		public AuthenticationManager authenticationManagerBean() throws Exception {
-   			AuthenticationManager parentManager = authenticationManager == null ? super.authenticationManagerBean() : authenticationManager;
-			ProviderManager authenticationManager = new ProviderManager( Arrays.asList(authenticationProvider), parentManager);
-			// 不擦除认证密码，擦除会导致TokenBasedRememberMeServices因为找不到Credentials再调用UserDetailsService而抛出UsernameNotFoundException
-			authenticationManager.setEraseCredentialsAfterAuthentication(false);
-			return authenticationManager;
+   			this.requestCache = super.requestCache();
+   			this.rememberMeServices = super.rememberMeServices();
+   			this.sessionRegistry = super.sessionRegistry();
+   			this.sessionAuthenticationStrategy = super.sessionAuthenticationStrategy();
+   			this.sessionInformationExpiredStrategy = super.sessionInformationExpiredStrategy();
 		}
 
 		public JwtAuthenticationProcessingFilter authenticationProcessingFilter() throws Exception {
@@ -229,7 +215,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 			 */
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 			
-			map.from(bizProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
+			map.from(authcProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
 			
 			map.from(authenticationManagerBean()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
@@ -258,18 +244,12 @@ public class SecurityJwtAuthcFilterConfiguration {
 			
 	        return authenticationFilter;
 	    }
-		
-		@Override
-		public void configure(AuthenticationManagerBuilder auth) throws Exception {
-	        auth.authenticationProvider(authenticationProvider);
-	        super.configure(auth);
-	    }
 
 	    @Override
 		public void configure(HttpSecurity http) throws Exception {
 	    	
 	    	// Session 管理器配置参数
-   	    	SecuritySessionMgtProperties sessionMgt = bizProperties.getSessionMgt();
+   	    	SecuritySessionMgtProperties sessionMgt = authcProperties.getSessionMgt();
    	    	// Session 注销配置参数
    	    	SecurityLogoutProperties logout = authcProperties.getLogout();
    	    	
@@ -296,13 +276,20 @@ public class SecurityJwtAuthcFilterConfiguration {
    	    		.logout()
    	    		.logoutUrl(logout.getPathPatterns())
    	    		.logoutSuccessHandler(logoutSuccessHandler)
-   	    		.addLogoutHandler(new CompositeLogoutHandler(logoutHandlers))
+   	    		.addLogoutHandler(logoutHandler)
    	    		.clearAuthentication(logout.isClearAuthentication())
    	    		.invalidateHttpSession(logout.isInvalidateHttpSession())
    	        	// Request 缓存配置
    	        	.and()
    	    		.requestCache()
    	        	.requestCache(requestCache)
+   	        	// 异常处理
+   	        	.and()
+   	        	.exceptionHandling()
+   	        	.authenticationEntryPoint(authenticationEntryPoint)
+   	        	.and()
+   	        	.httpBasic()
+   	        	.authenticationEntryPoint(authenticationEntryPoint)
    	        	.and()
    	        	.antMatcher(authcProperties.getPathPattern())
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
