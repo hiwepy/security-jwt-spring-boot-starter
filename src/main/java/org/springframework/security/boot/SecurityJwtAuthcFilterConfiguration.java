@@ -27,7 +27,6 @@ import org.springframework.security.boot.biz.authentication.PostRequestAuthentic
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.authentication.captcha.CaptchaResolver;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
-import org.springframework.security.boot.biz.property.SecurityCsrfProperties;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
@@ -37,7 +36,6 @@ import org.springframework.security.boot.jwt.authentication.JwtAuthenticationPro
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationSuccessHandler;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -51,11 +49,11 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.vindell.jwt.JwtPayload;
@@ -149,7 +147,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityBizConfigurerAdapter {
     	
 		private final SecurityBizProperties bizProperties;
-		private final SecurityJwtAuthcProperties jwtAuthcProperties;
+		private final SecurityJwtAuthcProperties authcProperties;
 		
 		private final AuthenticationManager authenticationManager;
 	    private final AuthenticatingFailureCounter authenticatingFailureCounter;
@@ -157,7 +155,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    private final PostRequestAuthenticationSuccessHandler authenticationSuccessHandler;
 	    private final PostRequestAuthenticationFailureHandler authenticationFailureHandler;
 	    private final CaptchaResolver captchaResolver;
-	    private final CsrfTokenRepository csrfTokenRepository;
 	    private final InvalidSessionStrategy invalidSessionStrategy;
 	    private final LogoutSuccessHandler logoutSuccessHandler;
 	    private final List<LogoutHandler> logoutHandlers;
@@ -180,6 +177,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
+   				ObjectProvider<CorsConfigurationSource> configurationSourceProvider,
    				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
    				@Qualifier("jwtLogoutSuccessHandler") ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider,
    				ObjectProvider<LogoutHandler> logoutHandlerProvider,
@@ -192,10 +190,10 @@ public class SecurityJwtAuthcFilterConfiguration {
 				
    			) {
 		    
-			super(bizProperties);
+			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable(), configurationSourceProvider.getIfAvailable());
    			
    			this.bizProperties = bizProperties;
-   			this.jwtAuthcProperties = jwtAuthcProperties;
+   			this.authcProperties = jwtAuthcProperties;
    			
    			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.authenticationProvider = authenticationProvider.getIfAvailable();
@@ -203,7 +201,6 @@ public class SecurityJwtAuthcFilterConfiguration {
    			this.authenticationFailureHandler = authenticationFailureHandler.getIfAvailable();
    			this.authenticationSuccessHandler = authenticationSuccessHandler.getIfAvailable();
    			this.captchaResolver = captchaResolverProvider.getIfAvailable();
-   			this.csrfTokenRepository = csrfTokenRepositoryProvider.getIfAvailable();
    			this.invalidSessionStrategy = invalidSessionStrategyProvider.getIfAvailable();
    			this.logoutSuccessHandler = logoutSuccessHandlerProvider.getIfAvailable();
    			this.logoutHandlers = logoutHandlerProvider.stream().collect(Collectors.toList());
@@ -240,26 +237,26 @@ public class SecurityJwtAuthcFilterConfiguration {
 			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authenticationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
 			
-			map.from(jwtAuthcProperties.getPathPattern()).to(authenticationFilter::setFilterProcessesUrl);
+			map.from(authcProperties.getPathPattern()).to(authenticationFilter::setFilterProcessesUrl);
 			
-			map.from(jwtAuthcProperties.getCaptcha().getParamName()).to(authenticationFilter::setCaptchaParameter);
+			map.from(authcProperties.getCaptcha().getParamName()).to(authenticationFilter::setCaptchaParameter);
 			// 是否验证码必填
-			map.from(jwtAuthcProperties.getCaptcha().isRequired()).to(authenticationFilter::setCaptchaRequired);
+			map.from(authcProperties.getCaptcha().isRequired()).to(authenticationFilter::setCaptchaRequired);
 			// 验证码解析器
 			map.from(captchaResolver).to(authenticationFilter::setCaptchaResolver);
 			// 认证失败计数器
 			map.from(authenticatingFailureCounter).to(authenticationFilter::setFailureCounter);
 			
-			map.from(jwtAuthcProperties.getUsernameParameter()).to(authenticationFilter::setUsernameParameter);
-			map.from(jwtAuthcProperties.getPasswordParameter()).to(authenticationFilter::setPasswordParameter);
-			map.from(jwtAuthcProperties.isPostOnly()).to(authenticationFilter::setPostOnly);
+			map.from(authcProperties.getUsernameParameter()).to(authenticationFilter::setUsernameParameter);
+			map.from(authcProperties.getPasswordParameter()).to(authenticationFilter::setPasswordParameter);
+			map.from(authcProperties.isPostOnly()).to(authenticationFilter::setPostOnly);
 			// 登陆失败重试次数，超出限制需要输入验证码
-			map.from(jwtAuthcProperties.getRetryTimesKeyAttribute()).to(authenticationFilter::setRetryTimesKeyAttribute);
-			map.from(jwtAuthcProperties.getRetryTimesWhenAccessDenied()).to(authenticationFilter::setRetryTimesWhenAccessDenied);
+			map.from(authcProperties.getRetryTimesKeyAttribute()).to(authenticationFilter::setRetryTimesKeyAttribute);
+			map.from(authcProperties.getRetryTimesWhenAccessDenied()).to(authenticationFilter::setRetryTimesWhenAccessDenied);
 			
 			map.from(rememberMeServices).to(authenticationFilter::setRememberMeServices);
 			map.from(sessionAuthenticationStrategy).to(authenticationFilter::setSessionAuthenticationStrategy);
-			map.from(jwtAuthcProperties.isContinueChainBeforeSuccessfulAuthentication()).to(authenticationFilter::setContinueChainBeforeSuccessfulAuthentication);
+			map.from(authcProperties.isContinueChainBeforeSuccessfulAuthentication()).to(authenticationFilter::setContinueChainBeforeSuccessfulAuthentication);
 			
 	        return authenticationFilter;
 	    }
@@ -276,7 +273,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    	// Session 管理器配置参数
    	    	SecuritySessionMgtProperties sessionMgt = bizProperties.getSessionMgt();
    	    	// Session 注销配置参数
-   	    	SecurityLogoutProperties logout = jwtAuthcProperties.getLogout();
+   	    	SecurityLogoutProperties logout = authcProperties.getLogout();
    	    	
    	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
 	    	http.headers().cacheControl(); // 禁用缓存
@@ -309,19 +306,12 @@ public class SecurityJwtAuthcFilterConfiguration {
    	    		.requestCache()
    	        	.requestCache(requestCache)
    	        	.and()
-   	        	.antMatcher(jwtAuthcProperties.getPathPattern())
+   	        	.antMatcher(authcProperties.getPathPattern())
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
    	    	
-   	    	// CSRF 配置
-   	    	SecurityCsrfProperties csrf = jwtAuthcProperties.getCsrf();
-   	    	if(csrf.isEnabled()) {
-   	       		http.csrf()
-   				   	.csrfTokenRepository(csrfTokenRepository)
-   				   	.ignoringAntMatchers(StringUtils.tokenizeToStringArray(csrf.getIgnoringAntMatchers()))
-   					.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
-   	        } else {
-   	        	http.csrf().disable();
-   	        }
+   	    	super.configure(http, authcProperties.getCros());
+   	    	super.configure(http, authcProperties.getCsrf());
+   	    	super.configure(http, authcProperties.getHeaders());
 	    	super.configure(http);
 	    }
 	    

@@ -35,10 +35,12 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -67,7 +69,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 
     	private final SecurityBizProperties bizProperties;
     	private final SecurityJwtAuthcProperties jwtAuthcProperties;
-    	private final SecurityJwtAuthzProperties jwtAuthzProperties;
+    	private final SecurityJwtAuthzProperties authzProperties;
     	
     	private final AuthenticationManager authenticationManager;	
  	    private final JwtAuthorizationProvider authorizationProvider;
@@ -90,6 +92,8 @@ public class SecurityJwtAuthzFilterConfiguration {
    				ObjectProvider<JwtAuthorizationProvider> authorizationProvider,
    				ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
    				ObjectProvider<JwtAuthorizationSuccessHandler> authorizationSuccessHandler,
+   				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
+   				ObjectProvider<CorsConfigurationSource> configurationSourceProvider,
    				@Qualifier("jwtLogoutHandler") ObjectProvider<SecurityContextLogoutHandler> logoutHandlerProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
@@ -100,11 +104,11 @@ public class SecurityJwtAuthzFilterConfiguration {
 				
 			) {
 			
-			super(bizProperties);
+			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable(), configurationSourceProvider.getIfAvailable());
 			
    			this.bizProperties = bizProperties;
    			this.jwtAuthcProperties = jwtAuthcProperties;
-   			this.jwtAuthzProperties = jwtAuthzProperties;
+   			this.authzProperties = jwtAuthzProperties;
    			
    			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
    			this.authorizationProvider = authorizationProvider.getIfAvailable();
@@ -142,13 +146,13 @@ public class SecurityJwtAuthzFilterConfiguration {
 			map.from(authenticationManagerBean()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authorizationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authorizationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
-			map.from(jwtAuthzProperties.getAuthorizationCookieName()).to(authenticationFilter::setAuthorizationCookieName);
-			map.from(jwtAuthzProperties.getAuthorizationHeaderName()).to(authenticationFilter::setAuthorizationHeaderName);
-			map.from(jwtAuthzProperties.getAuthorizationParamName()).to(authenticationFilter::setAuthorizationParamName);
-			map.from(jwtAuthzProperties.getPathPattern()).to(authenticationFilter::setFilterProcessesUrl);
+			map.from(authzProperties.getAuthorizationCookieName()).to(authenticationFilter::setAuthorizationCookieName);
+			map.from(authzProperties.getAuthorizationHeaderName()).to(authenticationFilter::setAuthorizationHeaderName);
+			map.from(authzProperties.getAuthorizationParamName()).to(authenticationFilter::setAuthorizationParamName);
+			map.from(authzProperties.getPathPattern()).to(authenticationFilter::setFilterProcessesUrl);
 			map.from(rememberMeServices).to(authenticationFilter::setRememberMeServices);
 			map.from(sessionAuthenticationStrategy).to(authenticationFilter::setSessionAuthenticationStrategy);
-			map.from(jwtAuthzProperties.isContinueChainBeforeSuccessfulAuthentication()).to(authenticationFilter::setContinueChainBeforeSuccessfulAuthentication);
+			map.from(authzProperties.isContinueChainBeforeSuccessfulAuthentication()).to(authenticationFilter::setContinueChainBeforeSuccessfulAuthentication);
 			
 			// 对过滤链按过滤器名称进行分组
 			List<Entry<String, String>> noneEntries = bizProperties.getFilterChainDefinitionMap().entrySet().stream()
@@ -181,9 +185,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    	// Session 管理器配置参数
    	    	SecuritySessionMgtProperties sessionMgt = bizProperties.getSessionMgt();
    	    	
-   	    	http.csrf().disable(); // We don't need CSRF for JWT based authentication
-	    	http.headers().cacheControl(); // 禁用缓存
-	    	
    		    // Session 管理器配置
    	    	http.sessionManagement()
    	    		.enableSessionUrlRewriting(sessionMgt.isEnableSessionUrlRewriting())
@@ -202,9 +203,12 @@ public class SecurityJwtAuthzFilterConfiguration {
    	    		.requestCache()
    	        	.requestCache(requestCache)
    	        	.and()
-   	        	.antMatcher(jwtAuthzProperties.getPathPattern())
+   	        	.antMatcher(authzProperties.getPathPattern())
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
 
+   	    	super.configure(http, authzProperties.getCros());
+   	    	super.configure(http, authzProperties.getCsrf());
+   	    	super.configure(http, authzProperties.getHeaders());
 	    	super.configure(http);
 	    }
 	    

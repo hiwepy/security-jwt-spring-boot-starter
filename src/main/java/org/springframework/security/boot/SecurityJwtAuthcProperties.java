@@ -19,7 +19,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
 import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
-import org.springframework.security.boot.biz.property.SecurityCsrfProperties;
+import org.springframework.security.boot.biz.property.SecurityHeaderCsrfProperties;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 
 import lombok.Getter;
@@ -40,7 +40,7 @@ public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
 	@NestedConfigurationProperty
-	private SecurityCsrfProperties csrf = new SecurityCsrfProperties();
+	private SecurityHeaderCsrfProperties csrf = new SecurityHeaderCsrfProperties();
 	@NestedConfigurationProperty
 	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
 	
