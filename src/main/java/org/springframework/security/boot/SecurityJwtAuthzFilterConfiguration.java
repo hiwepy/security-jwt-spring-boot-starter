@@ -40,7 +40,6 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -93,7 +92,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    				ObjectProvider<PostRequestAuthenticationFailureHandler> authorizationFailureHandler,
    				ObjectProvider<JwtAuthorizationSuccessHandler> authorizationSuccessHandler,
    				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
-   				ObjectProvider<CorsConfigurationSource> configurationSourceProvider,
    				@Qualifier("jwtLogoutHandler") ObjectProvider<SecurityContextLogoutHandler> logoutHandlerProvider,
    				ObjectProvider<ObjectMapper> objectMapperProvider,
 				ObjectProvider<RequestCache> requestCacheProvider,
@@ -104,7 +102,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 				
 			) {
 			
-			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable(), configurationSourceProvider.getIfAvailable());
+			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable());
 			
    			this.bizProperties = bizProperties;
    			this.jwtAuthcProperties = jwtAuthcProperties;

@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.security.boot.biz.property.SecurityHeaderCrosProperties;
+import org.springframework.security.boot.biz.property.SecurityHeaderCorsProperties;
 import org.springframework.security.boot.biz.property.SecurityHeaderCsrfProperties;
 import org.springframework.security.boot.biz.property.SecurityHeadersProperties;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
@@ -64,7 +64,7 @@ public class SecurityJwtAuthzProperties {
 	private SecurityHeadersProperties headers = new SecurityHeadersProperties();
 
 	@NestedConfigurationProperty
-	private SecurityHeaderCrosProperties cros = new SecurityHeaderCrosProperties();
+	private SecurityHeaderCorsProperties cros = new SecurityHeaderCorsProperties();
 	
 	@NestedConfigurationProperty
 	private SecurityHeaderCsrfProperties csrf = new SecurityHeaderCsrfProperties();

@@ -53,7 +53,6 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
-import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.vindell.jwt.JwtPayload;
@@ -177,7 +176,6 @@ public class SecurityJwtAuthcFilterConfiguration {
    				@Qualifier("jwtAuthenticationSuccessHandler") ObjectProvider<PostRequestAuthenticationSuccessHandler> authenticationSuccessHandler,
    				ObjectProvider<CaptchaResolver> captchaResolverProvider,
    				ObjectProvider<CsrfTokenRepository> csrfTokenRepositoryProvider,
-   				ObjectProvider<CorsConfigurationSource> configurationSourceProvider,
    				ObjectProvider<InvalidSessionStrategy> invalidSessionStrategyProvider,
    				@Qualifier("jwtLogoutSuccessHandler") ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider,
    				ObjectProvider<LogoutHandler> logoutHandlerProvider,
@@ -190,7 +188,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 				
    			) {
 		    
-			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable(), configurationSourceProvider.getIfAvailable());
+			super(bizProperties, csrfTokenRepositoryProvider.getIfAvailable());
    			
    			this.bizProperties = bizProperties;
    			this.authcProperties = jwtAuthcProperties;
@@ -309,7 +307,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    	        	.antMatcher(authcProperties.getPathPattern())
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
    	    	
-   	    	super.configure(http, authcProperties.getCros());
+   	    	super.configure(http, authcProperties.getCors());
    	    	super.configure(http, authcProperties.getCsrf());
    	    	super.configure(http, authcProperties.getHeaders());
 	    	super.configure(http);
