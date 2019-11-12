@@ -21,6 +21,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -45,6 +48,7 @@ import com.alibaba.fastjson.JSONObject;
 public class JwtMatchedAuthenticationEntryPoint implements MatchedAuthenticationEntryPoint {
 
 	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
+	protected Logger logger = LoggerFactory.getLogger(getClass());
 	
 	@Override
 	public boolean supports(AuthenticationException e) {
@@ -56,6 +60,8 @@ public class JwtMatchedAuthenticationEntryPoint implements MatchedAuthentication
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
 			throws IOException, ServletException {
+		
+		logger.debug("Locale : {}" , LocaleContextHolder.getLocale());
 		
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
