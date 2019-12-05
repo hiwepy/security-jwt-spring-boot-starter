@@ -76,14 +76,9 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		
-		// 用户角色ID集合
-   		List<String> roles = payload.getRoles();
-   		for (String role : roles) {
-   			//角色必须是ROLE_开头，可以在数据库中设置
-            GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(StringUtils.startsWithIgnoreCase(role, "ROLE_") ?
-            		role : "ROLE_"+role);
-            grantedAuthorities.add(grantedAuthority);
-		}
+		// 角色必须是ROLE_开头，可以在数据库中设置
+        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_"+ payload.getRole());
+        grantedAuthorities.add(grantedAuthority);
    		
    		// 用户权限标记集合
    		List<String> perms = payload.getPerms();
@@ -104,7 +99,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		principal.setPerms(new HashSet<String>(perms));
 		principal.setRoleid(payload.getRoleid());
 		principal.setRole(payload.getRole());
-		principal.setRoles(new HashSet<String>(roles));
+		principal.setRoles(payload.getRoles());
 		principal.setInitial(payload.isInitial());
 		principal.setRestricted(payload.isRestricted());
 		principal.setProfile(payload.getProfile());
