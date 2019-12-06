@@ -375,7 +375,6 @@
 		<fastjson.version>1.2.60</fastjson.version>
 		<jwt-issuer.version>1.0.4-SNAPSHOT</jwt-issuer.version>
 		<spring-boot-starter-security-biz.version>1.0.0-SNAPSHOT</spring-boot-starter-security-biz.version>
-		<spring-security-jwt.version>1.0.10.RELEASE</spring-security-jwt.version>
 	</properties>
 	
 	<dependencyManagement>
