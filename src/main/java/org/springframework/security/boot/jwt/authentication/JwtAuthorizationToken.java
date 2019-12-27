@@ -7,7 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 /**
  * Jwt授权 (authorization) Token
- * @author ： <a href="https://github.com/vindell">vindell</a>
+ * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 @SuppressWarnings("serial")
 public class JwtAuthorizationToken extends AbstractAuthenticationToken {

@@ -28,7 +28,7 @@ import com.alibaba.fastjson.JSONObject;
 
 /**
  * Jwt认证 (authentication)成功回调器：讲认证信息写回前端
- * @author 		： <a href="https://github.com/vindell">vindell</a>
+ * @author 		： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthenticationSuccessHandler {
    

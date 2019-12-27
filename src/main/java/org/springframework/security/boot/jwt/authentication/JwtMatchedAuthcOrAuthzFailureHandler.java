@@ -28,7 +28,7 @@ import com.alibaba.fastjson.JSONObject;
 
 /**
  * Jwt认证、授权 (authorization) 失败处理器
- * @author ： <a href="https://github.com/vindell">vindell</a>
+ * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtMatchedAuthcOrAuthzFailureHandler implements MatchedAuthenticationFailureHandler {
 	

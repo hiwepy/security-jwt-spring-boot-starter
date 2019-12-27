@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Jwt认证 (authentication)过滤器
- * @author ： <a href="https://github.com/vindell">vindell</a>
+ * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtAuthenticationProcessingFilter extends PostRequestAuthenticationProcessingFilter {
 

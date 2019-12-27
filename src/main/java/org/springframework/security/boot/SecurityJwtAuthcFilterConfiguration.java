@@ -52,7 +52,7 @@ import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.vindell.jwt.JwtPayload;
+import com.github.hiwepy.jwt.JwtPayload;
 
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
