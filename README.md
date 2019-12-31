@@ -1,4 +1,4 @@
-# spring-boot-starter-security-jwt
+# security-jwt-spring-boot-starter
 security starter for spring boot
 
 ### 说明
@@ -14,7 +14,7 @@ security starter for spring boot
 ``` xml
 <dependency>
 	<groupId>${project.groupId}</groupId>
-	<artifactId>spring-boot-starter-security-jwt</artifactId>
+	<artifactId>security-jwt-spring-boot-starter</artifactId>
 	<version>${project.version}</version>
 </dependency>
 ```
