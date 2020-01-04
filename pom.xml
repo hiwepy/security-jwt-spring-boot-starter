@@ -374,7 +374,7 @@
 		<maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
 		<fastjson.version>1.2.60</fastjson.version>
 		<jwt-issuer.version>1.0.4-SNAPSHOT</jwt-issuer.version>
-		<spring-boot-starter-security-biz.version>1.0.0-SNAPSHOT</spring-boot-starter-security-biz.version>
+		<security-biz-spring-boot-starter.version>1.0.0-SNAPSHOT</security-biz-spring-boot-starter.version>
 	</properties>
 	
 	<dependencyManagement>
@@ -410,11 +410,11 @@
 				<version>${jwt-issuer.version}</version>
 				<scope>provided</scope>
 			</dependency>
-			<!-- https://github.com/hiwepy/spring-boot-starter-security-biz -->
+			<!-- https://github.com/hiwepy/security-biz-spring-boot-starter -->
 			<dependency>
 				<groupId>com.github.hiwepy</groupId>
-				<artifactId>spring-boot-starter-security-biz</artifactId>
-				<version>${spring-boot-starter-security-biz.version}</version>
+				<artifactId>security-biz-spring-boot-starter</artifactId>
+				<version>${security-biz-spring-boot-starter.version}</version>
 			</dependency>
 			
 		</dependencies>
@@ -498,10 +498,10 @@
 			<artifactId>jwt-issuer-with-nimbus</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<!-- https://github.com/hiwepy/spring-boot-starter-security-biz -->
+		<!-- https://github.com/hiwepy/security-biz-spring-boot-starter -->
 		<dependency>
 			<groupId>com.github.hiwepy</groupId>
-			<artifactId>spring-boot-starter-security-biz</artifactId>
+			<artifactId>security-biz-spring-boot-starter</artifactId>
 		</dependency>
 		
 	</dependencies>
