@@ -9,6 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,7 +23,6 @@ import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSONObject;
 
@@ -59,23 +59,29 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		if(SecurityPrincipal.class.isAssignableFrom(userDetails.getClass())) {
 			SecurityPrincipal securityPrincipal = (SecurityPrincipal) userDetails;
 			tokenMap.put("initial", securityPrincipal.isInitial());
-			tokenMap.put("alias", StringUtils.hasText(securityPrincipal.getAlias()) ? securityPrincipal.getAlias() : EMPTY);
-			tokenMap.put("usercode", StringUtils.hasText(securityPrincipal.getUsercode()) ? securityPrincipal.getUsercode() : EMPTY);
-			tokenMap.put("userkey", StringUtils.hasText(securityPrincipal.getUserkey()) ? securityPrincipal.getUserkey() : EMPTY);
-			tokenMap.put("userid", StringUtils.hasText(securityPrincipal.getUserid()) ? securityPrincipal.getUserid() : EMPTY);
-			tokenMap.put("roleid", StringUtils.hasText(securityPrincipal.getRoleid()) ? securityPrincipal.getRoleid() : EMPTY );
-			tokenMap.put("role", StringUtils.hasText(securityPrincipal.getRole()) ? securityPrincipal.getRole() : EMPTY);
+			tokenMap.put("alias", StringUtils.defaultString(securityPrincipal.getAlias(), EMPTY));
+			tokenMap.put("userid", StringUtils.defaultString(securityPrincipal.getUserid(), EMPTY));
+			tokenMap.put("userkey", StringUtils.defaultString(securityPrincipal.getUserkey(), EMPTY));
+			tokenMap.put("usercode", StringUtils.defaultString(securityPrincipal.getUsercode(), EMPTY));
+			tokenMap.put("username", userDetails.getUsername());
+			tokenMap.put("perms", userDetails.getAuthorities());
+			tokenMap.put("roleid", StringUtils.defaultString(securityPrincipal.getRoleid(), EMPTY ));
+			tokenMap.put("role", StringUtils.defaultString(securityPrincipal.getRole(), EMPTY));
 			tokenMap.put("roles", CollectionUtils.isEmpty(securityPrincipal.getRoles()) ? new ArrayList<>() : securityPrincipal.getRoles() );
 			tokenMap.put("restricted", securityPrincipal.isRestricted());
 			tokenMap.put("profile", CollectionUtils.isEmpty(securityPrincipal.getProfile()) ? new HashMap<>() : securityPrincipal.getProfile() );
 			tokenMap.put("faced", securityPrincipal.isFace());
-			tokenMap.put("faceId", StringUtils.hasText(securityPrincipal.getFaceId()) ? securityPrincipal.getFaceId() : EMPTY ); 
+			tokenMap.put("faceId", StringUtils.defaultString(securityPrincipal.getFaceId(), EMPTY ));
+			// JSON Web Token (JWT)
+			tokenMap.put("token", getPayloadRepository().issueJwt((AbstractAuthenticationToken) authentication));
 		} else {
 			tokenMap.put("initial", false);
 			tokenMap.put("alias", "匿名账户");
-			tokenMap.put("usercode", EMPTY);
-			tokenMap.put("userkey", EMPTY);
 			tokenMap.put("userid", EMPTY);
+			tokenMap.put("userkey", EMPTY);
+			tokenMap.put("usercode", EMPTY);
+			tokenMap.put("username", EMPTY);
+			tokenMap.put("perms", new ArrayList<>());
 			tokenMap.put("roleid", EMPTY);
 			tokenMap.put("role", EMPTY);
 			tokenMap.put("roles", new ArrayList<>());
@@ -83,13 +89,11 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenMap.put("profile", new HashMap<>());
 			tokenMap.put("faced", false);
 			tokenMap.put("faceId", EMPTY);
+			tokenMap.put("token", EMPTY);
 		}
-		tokenMap.put("perms", userDetails.getAuthorities());
-		tokenMap.put("token", getPayloadRepository().issueJwt((AbstractAuthenticationToken) authentication));
-		tokenMap.put("username", userDetails.getUsername());
 		
 		response.setStatus(HttpStatus.OK.value());
-		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		
 		JSONObject.writeJSONString(response.getWriter(), tokenMap);
     	 
