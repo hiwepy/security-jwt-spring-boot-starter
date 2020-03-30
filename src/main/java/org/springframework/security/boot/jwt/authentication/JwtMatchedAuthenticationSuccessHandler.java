@@ -15,7 +15,6 @@ import org.springframework.security.boot.biz.SpringSecurityBizMessageSource;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
-import org.springframework.security.boot.jwt.utils.SubjectJwtUtils;
 import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,7 +52,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 			tokenString = getPayloadRepository().issueJwt((AbstractAuthenticationToken) authentication);
 		} 
     	
-		Map<String, Object> tokenMap = SubjectJwtUtils.tokenMap(authentication, tokenString);
+		Map<String, Object> tokenMap = SubjectUtils.tokenMap(authentication, tokenString);
 		
 		response.setStatus(HttpStatus.OK.value());
 		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
