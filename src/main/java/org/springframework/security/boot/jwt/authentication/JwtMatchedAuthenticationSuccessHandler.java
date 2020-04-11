@@ -1,6 +1,7 @@
 package org.springframework.security.boot.jwt.authentication;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -55,7 +56,8 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		Map<String, Object> tokenMap = SubjectUtils.tokenMap(authentication, tokenString);
 		
 		response.setStatus(HttpStatus.OK.value());
-		response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 			
 		JSONObject.writeJSONString(response.getWriter(), tokenMap);
     	 
