@@ -3,6 +3,7 @@ package org.springframework.security.boot.jwt.authentication;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -87,11 +88,14 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
             grantedAuthorities.add(authority);
 		}
 		
-		SecurityPrincipal principal = new SecurityPrincipal(payload.getClientId(), payload.getTokenId(), payload.isEnabled(),
+		Map<String, Object> claims = payload.getClaims();
+		
+		String username = Objects.isNull(claims.get("username")) ? payload.getClientId() : String.valueOf(claims.get("username"));
+		
+		SecurityPrincipal principal = new SecurityPrincipal(username, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
-		
-		Map<String, Object> claims = payload.getClaims();
+	
 		principal.setUserid(String.valueOf(claims.get("userid")));
 		principal.setUserkey(String.valueOf(claims.get("userkey")));
 		principal.setUsercode(String.valueOf(claims.get("usercode")));
