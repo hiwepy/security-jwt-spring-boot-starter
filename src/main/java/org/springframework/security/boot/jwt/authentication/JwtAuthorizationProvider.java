@@ -13,6 +13,7 @@ import org.springframework.security.authentication.AccountStatusUserDetailsCheck
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
@@ -36,7 +37,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private final JwtPayloadRepository payloadRepository;
     private UserDetailsChecker userDetailsChecker = new AccountStatusUserDetailsChecker();
-    private boolean checkExpiry = true;
+    private boolean checkExpiry = false;
     
     public JwtAuthorizationProvider(final JwtPayloadRepository payloadRepository) {
         this.payloadRepository = payloadRepository;
@@ -67,6 +68,11 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		}
 		
 		JwtAuthorizationToken jwtToken = (JwtAuthorizationToken) authentication;
+		
+		// 检查token有效性
+		if(isCheckExpiry() && !getPayloadRepository().verify(jwtToken, isCheckExpiry())) {
+			throw new AuthenticationJwtExpiredException("Token Expired");
+		}
 		
 		// 解析Token载体信息
 		JwtPayload payload = getPayloadRepository().getPayload(jwtToken, checkExpiry);
