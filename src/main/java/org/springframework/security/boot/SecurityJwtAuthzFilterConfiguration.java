@@ -51,11 +51,11 @@ public class SecurityJwtAuthzFilterConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public JwtAuthorizationProvider jwtAuthorizationProvider(JwtPayloadRepository payloadRepository) {
-		return new JwtAuthorizationProvider(payloadRepository);
+	public JwtAuthorizationProvider jwtAuthorizationProvider(JwtPayloadRepository payloadRepository, SecurityJwtAuthzProperties jwtAuthzProperties) {
+		JwtAuthorizationProvider jwtAuthorizationProvider = new JwtAuthorizationProvider(payloadRepository);
+		jwtAuthorizationProvider.setCheckExpiry(jwtAuthzProperties.isCheckExpiry());
+		return jwtAuthorizationProvider;
 	}
-	
-	
 	
 	
     @Configuration

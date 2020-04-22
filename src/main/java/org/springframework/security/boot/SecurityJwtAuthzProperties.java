@@ -41,7 +41,7 @@ public class SecurityJwtAuthzProperties {
 	
 	/** Whether Enable JWT Authorization. */
 	private boolean enabled = false;
-	
+	private boolean checkExpiry = false;
 	/** Authorization Path Pattern */
 	private String pathPattern = "/**";
 	private String[] ignorePatterns = new String[] {"/login/jwt"};
