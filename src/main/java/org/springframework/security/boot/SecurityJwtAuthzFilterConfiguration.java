@@ -62,7 +62,7 @@ public class SecurityJwtAuthzFilterConfiguration {
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
     @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 80)
-	static class JwtAuthzWebSecurityConfigurerAdapter extends AbstractSecurityConfigurerAdapter {
+	static class JwtAuthzWebSecurityConfigurerAdapter extends WebSecurityBizConfigurerAdapter {
 
     	private final SecurityBizProperties bizProperties;
     	private final SecurityJwtAuthcProperties authcProperties;
