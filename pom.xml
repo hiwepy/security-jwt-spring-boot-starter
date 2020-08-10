@@ -503,6 +503,12 @@
 			<groupId>com.github.hiwepy</groupId>
 			<artifactId>security-biz-spring-boot-starter</artifactId>
 		</dependency>
+		<!-- For Spring WebFlux -->
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-webflux</artifactId>
+		    <scope>provided</scope>
+		</dependency>
 		
 	</dependencies>
 
