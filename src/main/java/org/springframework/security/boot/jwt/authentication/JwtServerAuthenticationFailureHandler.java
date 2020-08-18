@@ -61,7 +61,7 @@ public class JwtServerAuthenticationFailureHandler implements MatchedServerAuthe
 		
 		ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
 		
-		response.setStatusCode(HttpStatus.UNAUTHORIZED);
+		response.setStatusCode(HttpStatus.OK);
 		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
 		String body = "{}";

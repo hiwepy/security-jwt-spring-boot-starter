@@ -49,7 +49,7 @@ public class JwtMatchedAuthcOrAuthzFailureHandler implements MatchedAuthenticati
 		
 		logger.debug("Locale : {}" , LocaleContextHolder.getLocale());
 		
-		response.setStatus(HttpStatus.UNAUTHORIZED.value());
+		response.setStatus(HttpStatus.OK.value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 		
