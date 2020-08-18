@@ -18,6 +18,7 @@ package org.springframework.security.boot.jwt.authentication;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,8 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.boot.biz.SpringSecurityBizMessageSource;
 import org.springframework.security.boot.biz.authentication.nested.MatchedServerAuthenticationSuccessHandler;
+import org.springframework.security.boot.biz.exception.AuthResponse;
+import org.springframework.security.boot.biz.exception.AuthResponseCode;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
 import org.springframework.security.boot.utils.SubjectUtils;
@@ -62,16 +65,18 @@ public class JwtServerAuthenticationSuccessHandler implements MatchedServerAuthe
 			// JSON Web Token (JWT)
 			tokenString = getPayloadRepository().issueJwt((AbstractAuthenticationToken) authentication);
 		} 
-    	
-		Map<String, Object> tokenMap = SubjectUtils.tokenMap(authentication, tokenString);
-		
+
 		ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
 		
+    	// 设置状态码和响应头
 		response.setStatusCode(HttpStatus.OK);
 		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
-		String body = JSONObject.toJSONString(tokenMap);
-		
+		// 国际化后的异常信息
+		String message = messages.getMessage(AuthResponseCode.SC_AUTHC_SUCCESS.getMsgKey(), LocaleContextHolder.getLocale());
+		// 写出JSON
+		Map<String, Object> tokenMap = SubjectUtils.tokenMap(authentication, tokenString);
+		String body = JSONObject.toJSONString(AuthResponse.success(message, tokenMap));
 		DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(buffer));
         
