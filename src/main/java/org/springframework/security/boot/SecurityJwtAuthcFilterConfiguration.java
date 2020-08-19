@@ -15,7 +15,6 @@ import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
@@ -35,7 +34,6 @@ import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthentica
 import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationSuccessHandler;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -52,7 +50,6 @@ import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.hiwepy.jwt.JwtPayload;
 
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
@@ -81,24 +78,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public JwtPayloadRepository payloadRepository() {
-		return new JwtPayloadRepository() {
-
-			@Override
-			public String issueJwt(AbstractAuthenticationToken token) {
-				return null;
-			}
-
-			@Override
-			public boolean verify(AbstractAuthenticationToken token, boolean checkExpiry) throws AuthenticationException {
-				return false;
-			}
-
-			@Override
-			public JwtPayload getPayload(AbstractAuthenticationToken token, boolean checkExpiry) {
-				return null;
-			}
-			
-		};
+		return new JwtPayloadRepository() {};
 	}
 	
 	@Bean
