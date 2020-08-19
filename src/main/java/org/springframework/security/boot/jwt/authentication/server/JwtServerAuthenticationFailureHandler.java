@@ -16,6 +16,7 @@
 package org.springframework.security.boot.jwt.authentication.server;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,13 +60,15 @@ public class JwtServerAuthenticationFailureHandler implements MatchedServerAuthe
 		
 		logger.debug("Locale : {}" , LocaleContextHolder.getLocale());
 		
+		// 1、获取ServerHttpResponse
 		ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
 		
+    	// 2、设置状态码和响应头
 		response.setStatusCode(HttpStatus.OK);
 		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
 		String body = "{}";
-		
+		Locale locale = 
 		if (e instanceof AuthenticationJwtNotFoundException) {
 			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_REQUIRED.getCode(), 
 					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_REQUIRED.getMsgKey(), e.getMessage())));

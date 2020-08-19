@@ -58,17 +58,20 @@ public class JwtServerAuthenticationSuccessHandler implements MatchedServerAuthe
 	@Override
 	public Mono<Void> onAuthenticationSuccess(WebFilterExchange webFilterExchange, Authentication authentication) {
 
-		// 获取ServerHttpResponse
+		// 1、获取ServerHttpResponse
 		ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
 		
-    	// 设置状态码和响应头
+    	// 2、设置状态码和响应头
 		response.setStatusCode(HttpStatus.OK);
 		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
-		// 国际化后的异常信息
+		// 3、国际化后的异常信息
 		String message = messages.getMessage(AuthResponseCode.SC_AUTHC_SUCCESS.getMsgKey(), LocaleContextHolder.getLocale());
-		// 写出JSON
+		
+		// 4、获取认证账号详情
 		UserProfilePayload profilePayload = getPayloadRepository().getProfilePayload((AbstractAuthenticationToken) authentication, isCheckExpiry());
+		
+		// 5、输出JSON格式数据
 		String body = JSONObject.toJSONString(AuthResponse.success(message, profilePayload));
 		DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(buffer));

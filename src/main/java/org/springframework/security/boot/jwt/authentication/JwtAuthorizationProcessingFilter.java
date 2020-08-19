@@ -168,7 +168,7 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
 
-		String token = obtainToken(request);
+		String token = this.obtainToken(request);
 
 		if (token == null) {
 			token = "";
@@ -180,10 +180,10 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 			throw new AuthenticationJwtNotFoundException("JWT not provided");
 		}
 
-		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(request.getHeader(getUidHeaderName()), token);
-		authRequest.setLongitude(request.getHeader(getLongitudeHeaderName()));
-		authRequest.setLatitude(request.getHeader(getLatitudeHeaderName()));
-		authRequest.setSign(request.getHeader(getSignHeaderName()));
+		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
+		authRequest.setLongitude(this.obtainLongitude(request));
+		authRequest.setLatitude(this.obtainLatitude(request));
+		authRequest.setSign(this.obtainSign(request));
 		
 		// Allow subclasses to set the "details" property
 		setDetails(request, authRequest);
@@ -195,6 +195,23 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		authRequest.setDetails(authenticationDetailsSource.buildDetails(request));
 	}
 	
+	protected String obtainUid(HttpServletRequest request) {
+		return request.getHeader(getUidHeaderName());
+	}
+
+	protected String obtainLongitude(HttpServletRequest request) {
+		return request.getHeader(getLongitudeHeaderName());
+	}
+	
+	protected String obtainLatitude(HttpServletRequest request) {
+		return request.getHeader(getLatitudeHeaderName());
+	}
+	
+	protected String obtainSign(HttpServletRequest request) {
+		return request.getHeader(getSignHeaderName());
+	}
+
+
 	protected String obtainToken(HttpServletRequest request) {
 
 		// 从header中获取token
