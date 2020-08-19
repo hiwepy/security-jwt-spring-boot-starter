@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.springframework.security.boot.jwt.authentication;
+package org.springframework.security.boot.jwt.authentication.server;
 
 import java.nio.charset.StandardCharsets;
 
@@ -30,6 +30,7 @@ import org.springframework.security.boot.biz.exception.AuthResponse;
 import org.springframework.security.boot.biz.exception.AuthResponseCode;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.UserProfilePayload;
+import org.springframework.security.boot.jwt.authentication.JwtAuthenticationToken;
 import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.WebFilterExchange;

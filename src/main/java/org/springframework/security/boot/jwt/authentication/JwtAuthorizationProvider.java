@@ -58,8 +58,9 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
     	if (logger.isDebugEnabled()) {
 			logger.debug("Processing authentication request : " + authentication);
 		}
- 
-        String token = (String) authentication.getPrincipal();
+    	
+    	//String uid = (String) authentication.getPrincipal();
+        String token = (String) authentication.getCredentials();
 
 		if (!StringUtils.hasText(token)) {
 			logger.debug("No JWT found in request.");

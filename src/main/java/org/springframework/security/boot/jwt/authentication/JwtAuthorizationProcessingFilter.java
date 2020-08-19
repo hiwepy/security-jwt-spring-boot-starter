@@ -48,15 +48,39 @@ import org.springframework.util.CollectionUtils;
  */
 public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProcessingFilter {
 
+	/**
+	 * HTTP Authorization Param, equal to <code>token</code>
+	 */
 	public static final String AUTHORIZATION_PARAM = "token";
 	/**
-	 * HTTP Authorization header, equal to <code>Authorization</code>
+	 * HTTP Authorization header, equal to <code>X-Authorization</code>
 	 */
 	public static final String AUTHORIZATION_HEADER = "X-Authorization";
+	/**
+	 * HTTP Authorization header, equal to <code>X-Uid</code>
+	 */
+	public static final String UID_HEADER = "X-Uid";
+	/**
+	 * HTTP Authorization header, equal to <code>X-Sign</code>
+	 */
+	public static final String SIGN_HEADER = "X-Sign";
+	/**
+	 * HTTP Authorization header, equal to <code>X-Longitude</code>
+	 */
+	public static final String LONGITUDE_HEADER = "X-Longitude";
+	/**
+	 * HTTP Authorization header, equal to <code>X-Latitude</code>
+	 */
+	public static final String LATITUDE_HEADER = "X-Latitude";
 
 	private String authorizationHeaderName = AUTHORIZATION_HEADER;
 	private String authorizationParamName = AUTHORIZATION_PARAM;
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
+	private String uidHeaderName = UID_HEADER;
+	private String signHeaderName = SIGN_HEADER;
+	private String longitudeHeaderName = LONGITUDE_HEADER;
+	private String latitudeHeaderName = LATITUDE_HEADER;
+	
 	private List<RequestMatcher> ignoreRequestMatchers;
 	
 	private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
@@ -155,9 +179,12 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		if(!StringUtils.hasText(token)) {
 			throw new AuthenticationJwtNotFoundException("JWT not provided");
 		}
-		
-		AbstractAuthenticationToken authRequest = new JwtAuthorizationToken(token);
 
+		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(request.getHeader(getUidHeaderName()), token);
+		authRequest.setLongitude(request.getHeader(getLongitudeHeaderName()));
+		authRequest.setLatitude(request.getHeader(getLatitudeHeaderName()));
+		authRequest.setSign(request.getHeader(getSignHeaderName()));
+		
 		// Allow subclasses to set the "details" property
 		setDetails(request, authRequest);
 
@@ -226,6 +253,38 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 
 	public void setAuthorizationCookieName(String authorizationCookieName) {
 		this.authorizationCookieName = authorizationCookieName;
+	}
+
+	public String getUidHeaderName() {
+		return uidHeaderName;
+	}
+
+	public void setUidHeaderName(String uidHeaderName) {
+		this.uidHeaderName = uidHeaderName;
+	}
+
+	public String getSignHeaderName() {
+		return signHeaderName;
+	}
+
+	public void setSignHeaderName(String signHeaderName) {
+		this.signHeaderName = signHeaderName;
+	}
+
+	public String getLongitudeHeaderName() {
+		return longitudeHeaderName;
+	}
+
+	public void setLongitudeHeaderName(String longitudeHeaderName) {
+		this.longitudeHeaderName = longitudeHeaderName;
+	}
+
+	public String getLatitudeHeaderName() {
+		return latitudeHeaderName;
+	}
+
+	public void setLatitudeHeaderName(String latitudeHeaderName) {
+		this.latitudeHeaderName = latitudeHeaderName;
 	}
 
 }

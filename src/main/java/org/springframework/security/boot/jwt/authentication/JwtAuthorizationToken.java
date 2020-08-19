@@ -14,10 +14,14 @@ public class JwtAuthorizationToken extends AbstractAuthenticationToken {
 
 	private final Object principal;
 	private Object credentials;
+	private String sign;
+	private String longitude;
+	private String latitude;
     
-    public JwtAuthorizationToken( Object principal) {
+    public JwtAuthorizationToken( Object principal, Object credentials) {
         super(null);
         this.principal = principal;
+        this.credentials = credentials;
         this.setAuthenticated(false);
     }
 
@@ -53,5 +57,29 @@ public class JwtAuthorizationToken extends AbstractAuthenticationToken {
         super.eraseCredentials();
         this.credentials = null;
     }
+
+	public String getSign() {
+		return sign;
+	}
+
+	public void setSign(String sign) {
+		this.sign = sign;
+	}
+
+	public String getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(String longitude) {
+		this.longitude = longitude;
+	}
+
+	public String getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(String latitude) {
+		this.latitude = latitude;
+	}
     
 }
