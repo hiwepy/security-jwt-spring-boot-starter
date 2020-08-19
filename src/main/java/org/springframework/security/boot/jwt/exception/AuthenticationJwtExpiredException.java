@@ -1,9 +1,10 @@
 package org.springframework.security.boot.jwt.exception;
 
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.boot.biz.exception.AuthResponseCode;
+import org.springframework.security.boot.biz.exception.AuthenticationExceptionAdapter;
 
 @SuppressWarnings("serial")
-public class AuthenticationJwtExpiredException extends AuthenticationException {
+public class AuthenticationJwtExpiredException extends AuthenticationExceptionAdapter {
 
 	// ~ Constructors
 	// ===================================================================================================
@@ -15,7 +16,7 @@ public class AuthenticationJwtExpiredException extends AuthenticationException {
 	 * @param msg the detail message
 	 */
 	public AuthenticationJwtExpiredException(String msg) {
-		super(msg);
+		super(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED, msg);
 	}
 
 	/**
@@ -26,7 +27,7 @@ public class AuthenticationJwtExpiredException extends AuthenticationException {
 	 * @param t   root cause
 	 */
 	public AuthenticationJwtExpiredException(String msg, Throwable t) {
-		super(msg, t);
+		super(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED, msg, t);
 	}
 
 }

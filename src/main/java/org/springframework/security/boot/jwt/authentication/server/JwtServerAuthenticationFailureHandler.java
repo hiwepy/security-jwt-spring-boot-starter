@@ -15,21 +15,7 @@
  */
 package org.springframework.security.boot.jwt.authentication.server;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.security.boot.biz.SpringSecurityBizMessageSource;
-import org.springframework.security.boot.biz.authentication.nested.MatchedServerAuthenticationFailureHandler;
-import org.springframework.security.boot.biz.exception.AuthResponse;
-import org.springframework.security.boot.biz.exception.AuthResponseCode;
+import org.springframework.security.boot.biz.authentication.server.MatchedServerAuthenticationFailureHandler;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtIncorrectException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtInvalidException;
@@ -37,62 +23,14 @@ import org.springframework.security.boot.jwt.exception.AuthenticationJwtIssuedEx
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.server.WebFilterExchange;
-
-import com.alibaba.fastjson.JSONObject;
-
-import reactor.core.publisher.Mono;
 
 public class JwtServerAuthenticationFailureHandler implements MatchedServerAuthenticationFailureHandler {
 
-	protected Logger logger = LoggerFactory.getLogger(getClass());
-	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
-	
 	@Override
 	public boolean supports(AuthenticationException e) {
 		return SubjectUtils.isAssignableFrom(e.getClass(), AuthenticationJwtIssuedException.class,
 				AuthenticationJwtNotFoundException.class, AuthenticationJwtExpiredException.class,
 				AuthenticationJwtInvalidException.class, AuthenticationJwtIncorrectException.class);
-	}
-	
-	@Override
-	public Mono<Void> onAuthenticationFailure(WebFilterExchange webFilterExchange, AuthenticationException e) {
-		
-		logger.debug("Locale : {}" , LocaleContextHolder.getLocale());
-		
-		// 1、获取ServerHttpResponse
-		ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
-		
-    	// 2、设置状态码和响应头
-		response.setStatusCode(HttpStatus.OK);
-		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-		
-		String body = "{}";
-		Locale locale = 
-		if (e instanceof AuthenticationJwtNotFoundException) {
-			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_REQUIRED.getCode(), 
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_REQUIRED.getMsgKey(), e.getMessage())));
-		} else if (e instanceof AuthenticationJwtIssuedException) {
-			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_ISSUED.getCode(), 
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_ISSUED.getMsgKey(), e.getMessage())));
-		} else if (e instanceof AuthenticationJwtExpiredException) {
-			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getCode(), 
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_EXPIRED.getMsgKey(), e.getMessage())));
-		} else if (e instanceof AuthenticationJwtInvalidException) {
-			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INVALID.getCode(), 
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_INVALID.getMsgKey(), e.getMessage())));
-		} else if (e instanceof AuthenticationJwtIncorrectException) {
-			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getCode(), 
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_TOKEN_INCORRECT.getMsgKey(), e.getMessage())));
-		}  
-		else {
-			body = JSONObject.toJSONString(AuthResponse.of(AuthResponseCode.SC_AUTHZ_FAIL.getCode(),
-					messages.getMessage(AuthResponseCode.SC_AUTHZ_FAIL.getMsgKey())));
-		}
-
-		DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
-        return response.writeWith(Mono.just(buffer));
-        
 	}
     
 }

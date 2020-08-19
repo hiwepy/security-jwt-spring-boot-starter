@@ -1,8 +1,9 @@
 package org.springframework.security.boot.jwt.exception;
 
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.boot.biz.exception.AuthResponseCode;
+import org.springframework.security.boot.biz.exception.AuthenticationExceptionAdapter;
 @SuppressWarnings("serial")
-public class AuthenticationJwtInvalidException extends AuthenticationException {
+public class AuthenticationJwtInvalidException extends AuthenticationExceptionAdapter {
 
 	// ~ Constructors
 	// ===================================================================================================
@@ -14,7 +15,7 @@ public class AuthenticationJwtInvalidException extends AuthenticationException {
 	 * @param msg the detail message
 	 */
 	public AuthenticationJwtInvalidException(String msg) {
-		super(msg);
+		super(AuthResponseCode.SC_AUTHZ_TOKEN_INVALID, msg);
 	}
 
 	/**
@@ -25,7 +26,7 @@ public class AuthenticationJwtInvalidException extends AuthenticationException {
 	 * @param t   root cause
 	 */
 	public AuthenticationJwtInvalidException(String msg, Throwable t) {
-		super(msg, t);
+		super(AuthResponseCode.SC_AUTHZ_TOKEN_INVALID, msg, t);
 	}
 
 }
