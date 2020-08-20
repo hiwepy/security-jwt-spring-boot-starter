@@ -4,25 +4,17 @@ import java.util.Objects;
 
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.security.web.server.context.ServerSecurityContextRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
 
-/**
- * 1、ServerSecurityContextRepository 负责构造 SecurityContext 对象
- * https://www.jianshu.com/p/e013ca21d91d
- * https://www.baeldung.com/spring-oauth-login-webflux
- * @author 		： <a href="https://github.com/vindell">vindell</a>
- */
-public class JwtServerSecurityContextRepository implements ServerSecurityContextRepository {
+public class JwtServerAuthenticationConverter implements ServerAuthenticationConverter {
 	
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
@@ -57,21 +49,11 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 	private String longitudeHeaderName = LONGITUDE_HEADER;
 	private String latitudeHeaderName = LATITUDE_HEADER;
 
-	private ReactiveAuthenticationManager authenticationManager;
-	
-	public JwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager) {
-		this.authenticationManager = authenticationManager;
-	}
 
 	@Override
-	public Mono<Void> save(ServerWebExchange serverWebExchange, SecurityContext securityContext) {
-		return Mono.empty();
-	}
-
-	@Override
-	public Mono<SecurityContext> load(ServerWebExchange serverWebExchange) {
+	public Mono<Authentication> convert(ServerWebExchange exchange) {
 		
-		ServerHttpRequest request = serverWebExchange.getRequest();
+		ServerHttpRequest request = exchange.getRequest();
 		
 		String token = this.obtainToken(request);
 
@@ -90,12 +72,10 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 		authRequest.setLatitude(this.obtainLatitude(request));
 		authRequest.setSign(this.obtainSign(request));
 		
-		return this.authenticationManager
-				.authenticate(authRequest)
-				.map(SecurityContextImpl::new);
-		
+		return Mono.justOrEmpty(authRequest);
 	}
-	
+
+
 	protected String obtainUid(ServerHttpRequest request) {
 		return request.getHeaders().getFirst(getUidHeaderName());
 	}
@@ -187,14 +167,6 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 
 	public void setLatitudeHeaderName(String latitudeHeaderName) {
 		this.latitudeHeaderName = latitudeHeaderName;
-	}
-
-	public ReactiveAuthenticationManager getAuthenticationManager() {
-		return authenticationManager;
-	}
-
-	public void setAuthenticationManager(ReactiveAuthenticationManager authenticationManager) {
-		this.authenticationManager = authenticationManager;
 	}
 
 }
