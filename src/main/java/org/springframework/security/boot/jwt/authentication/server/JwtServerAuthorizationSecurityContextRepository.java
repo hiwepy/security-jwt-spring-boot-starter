@@ -6,24 +6,24 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
-import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
 
 /**
- * 1、ServerSecurityContextRepository 负责构造 SecurityContext 对象
+ * 1、JWT Authorization Security Context Repository For WebFlux （负责提取Token，构造 SecurityContext 对象）
  * https://www.jianshu.com/p/e013ca21d91d
  * https://www.baeldung.com/spring-oauth-login-webflux
  * @author 		： <a href="https://github.com/vindell">vindell</a>
  */
-public class JwtServerSecurityContextRepository implements ServerSecurityContextRepository {
+public class JwtServerAuthorizationSecurityContextRepository implements ServerSecurityContextRepository {
 	
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
@@ -59,10 +59,11 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 	private String latitudeHeaderName = LATITUDE_HEADER;
 
 	private ReactiveAuthenticationManager authenticationManager;
-	private ServerWebExchangeMatcher ignoreAuthenticationMatcher = ServerWebExchangeMatchers.anyExchange();
+	private ServerWebExchangeMatcher ignoreAuthenticationMatcher;
 
-	public JwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager) {
+	public JwtServerAuthorizationSecurityContextRepository(ReactiveAuthenticationManager authenticationManager, ServerWebExchangeMatcher ignoreAuthenticationMatcher) {
 		this.authenticationManager = authenticationManager;
+		this.ignoreAuthenticationMatcher = ignoreAuthenticationMatcher;
 	}
 
 	@Override
@@ -72,26 +73,35 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 
 	@Override
 	public Mono<SecurityContext> load(ServerWebExchange serverWebExchange) {
-		// 1、忽略不需要处理的请求
-		if(this.ignoreAuthenticationMatcher.matches(serverWebExchange).block().isMatch()) {
-			return Mono.empty();
-		}
-		// 2、从请求中提取token，并构造 SecurityContext
 		ServerHttpRequest request = serverWebExchange.getRequest();
-		return Mono.justOrEmpty(this.obtainToken(request)).map(token -> {
-			if(!token.isEmpty()) {
-				JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
-				authRequest.setLongitude(this.obtainLongitude(request));
-				authRequest.setLatitude(this.obtainLatitude(request));
-				authRequest.setSign(this.obtainSign(request));
-				return authRequest;
-			}
-			return null;
-		})
-		.flatMap( authRequest -> this.authenticationManager.authenticate(authRequest).map(SecurityContextImpl::new));
-		
+		return this.ignoreAuthenticationMatcher.matches(serverWebExchange)
+				// 1、过滤忽略的请求
+				.filter( matchResult -> !matchResult.isMatch())
+				// 2、从请求中提取token
+				.flatMap( matchResult -> Mono.just(this.obtainToken(request)))
+				// 3、没有获取到，则抛出异常
+				.switchIfEmpty(Mono.defer(() -> Mono.error(new AuthenticationJwtNotFoundException("Token not provided"))))
+				// 4、构造 JwtAuthorizationToken
+				.flatMap( token -> {
+					JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
+					authRequest.setLongitude(this.obtainLongitude(request));
+					authRequest.setLatitude(this.obtainLatitude(request));
+					authRequest.setSign(this.obtainSign(request));
+					return Mono.justOrEmpty(authRequest);
+				})
+				// 5、调用认证接口，并构造 SecurityContext
+				.flatMap( authRequest -> this.authenticationManager.authenticate(authRequest).map(SecurityContextImpl::new));
+		 
 	}
 	
+	public ServerWebExchangeMatcher getIgnoreAuthenticationMatcher() {
+		return ignoreAuthenticationMatcher;
+	}
+
+	public void setIgnoreAuthenticationMatcher(ServerWebExchangeMatcher ignoreAuthenticationMatcher) {
+		this.ignoreAuthenticationMatcher = ignoreAuthenticationMatcher;
+	}
+
 	protected String obtainUid(ServerHttpRequest request) {
 		return request.getHeaders().getFirst(getUidHeaderName());
 	}

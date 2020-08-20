@@ -24,6 +24,9 @@ import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFound
 import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.AuthenticationException;
 
+/**
+ * 5、JWT Authentication Failure Handler For WebFlux （负责认证失败处理）
+ */
 public class JwtServerAuthenticationFailureHandler implements MatchedServerAuthenticationFailureHandler {
 
 	@Override

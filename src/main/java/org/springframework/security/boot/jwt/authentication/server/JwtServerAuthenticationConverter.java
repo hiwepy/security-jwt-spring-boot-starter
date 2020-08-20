@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -13,6 +14,10 @@ import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
 
+/**
+ * 2、JWT Authentication Converter For WebFlux  （负责提取Token）
+ * @author 		： <a href="https://github.com/vindell">vindell</a>
+ */
 public class JwtServerAuthenticationConverter implements ServerAuthenticationConverter {
 	
 	/**
@@ -48,30 +53,21 @@ public class JwtServerAuthenticationConverter implements ServerAuthenticationCon
 	private String longitudeHeaderName = LONGITUDE_HEADER;
 	private String latitudeHeaderName = LATITUDE_HEADER;
 
-
 	@Override
 	public Mono<Authentication> convert(ServerWebExchange exchange) {
-		
 		ServerHttpRequest request = exchange.getRequest();
-		
-		String token = this.obtainToken(request);
-		
-		if (token == null) {
-			token = "";
-		}
-
-		token = token.trim();
-		
-		if(!StringUtils.hasText(token)) {
-			return Mono.empty();
-		}
-
-		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
-		authRequest.setLongitude(this.obtainLongitude(request));
-		authRequest.setLatitude(this.obtainLatitude(request));
-		authRequest.setSign(this.obtainSign(request));
-		
-		return Mono.justOrEmpty(authRequest);
+		// 1、从请求中提取token
+		return Mono.justOrEmpty(this.obtainToken(request))
+				// 2、没有获取到，则抛出异常
+				.switchIfEmpty(Mono.defer(() -> Mono.error(new AuthenticationJwtNotFoundException("Token not provided"))))
+				// 3、构造 JwtAuthorizationToken
+				.flatMap( token -> {
+					JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
+					authRequest.setLongitude(this.obtainLongitude(request));
+					authRequest.setLatitude(this.obtainLatitude(request));
+					authRequest.setSign(this.obtainSign(request));
+					return Mono.justOrEmpty(authRequest);
+				});
 	}
 
 

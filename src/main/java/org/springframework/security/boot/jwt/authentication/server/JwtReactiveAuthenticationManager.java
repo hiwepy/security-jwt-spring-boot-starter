@@ -43,7 +43,7 @@ import com.github.hiwepy.jwt.JwtPayload;
 import reactor.core.publisher.Mono;
 
 /**
- * 2、AuthenticationManager 负责校验 Authentication 对象
+ * 3、JWT Authentication Manager For WebFlux （负责校验 Authentication 对象）
  */
 public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationManager  {
 
@@ -125,7 +125,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
         JwtAuthorizationToken authenticationToken = new JwtAuthorizationToken(principal, payload, principal.getAuthorities());        	
         authenticationToken.setDetails(authentication.getDetails());
         
-        return Mono.just(authenticationToken);
+        return Mono.justOrEmpty(authenticationToken);
     }
 	
 	public void setUserDetailsChecker(UserDetailsChecker userDetailsChecker) {

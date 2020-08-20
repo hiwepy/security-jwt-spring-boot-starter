@@ -34,7 +34,9 @@ import com.alibaba.fastjson.JSONObject;
 
 import reactor.core.publisher.Mono;
 
-
+/**
+ * 6、Server Access Denied Handler For WebFlux （负责访问被拒绝处理）
+ */
 public class JwtServerAccessDeniedHandler implements ServerAccessDeniedHandler {
 
 	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();

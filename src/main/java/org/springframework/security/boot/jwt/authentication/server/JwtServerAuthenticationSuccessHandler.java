@@ -39,6 +39,9 @@ import com.alibaba.fastjson.JSONObject;
 
 import reactor.core.publisher.Mono;
 
+/**
+ * 4、JWT Authentication Success Handler For WebFlux （负责认证成功处理）
+ */
 public class JwtServerAuthenticationSuccessHandler implements MatchedServerAuthenticationSuccessHandler {
 
 	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
