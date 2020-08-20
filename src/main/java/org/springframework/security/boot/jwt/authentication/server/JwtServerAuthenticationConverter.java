@@ -5,7 +5,6 @@ import java.util.Objects;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
-import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -56,7 +55,7 @@ public class JwtServerAuthenticationConverter implements ServerAuthenticationCon
 		ServerHttpRequest request = exchange.getRequest();
 		
 		String token = this.obtainToken(request);
-
+		
 		if (token == null) {
 			token = "";
 		}
@@ -64,7 +63,7 @@ public class JwtServerAuthenticationConverter implements ServerAuthenticationCon
 		token = token.trim();
 		
 		if(!StringUtils.hasText(token)) {
-			throw new AuthenticationJwtNotFoundException("JWT not provided");
+			return Mono.empty();
 		}
 
 		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);

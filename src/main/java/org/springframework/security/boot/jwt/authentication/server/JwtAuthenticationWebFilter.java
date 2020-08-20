@@ -20,19 +20,17 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 
 import reactor.core.publisher.Mono;
 
-/**
- * TODO
- * @author 		： <a href="https://github.com/vindell">vindell</a>
- */
-
 public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
 	
 	private ServerAuthenticationFailureHandler authenticationFailureHandler;
+	private ServerWebExchangeMatcher ignoreAuthenticationMatcher = ServerWebExchangeMatchers.anyExchange();
 
 	public JwtAuthenticationWebFilter(ReactiveAuthenticationManager authenticationManager) {
 		super(authenticationManager);
@@ -40,6 +38,9 @@ public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+		if(this.ignoreAuthenticationMatcher.matches(exchange).block().isMatch()) {
+			return chain.filter(exchange);
+		}
 		WebFilterExchange webFilterExchange = new WebFilterExchange(exchange, chain);
 		return super.filter(exchange, chain)
 				.onErrorResume(AuthenticationException.class, e -> this.authenticationFailureHandler
@@ -51,5 +52,19 @@ public class JwtAuthenticationWebFilter extends AuthenticationWebFilter {
 		super.setAuthenticationFailureHandler(authenticationFailureHandler);
 		this.authenticationFailureHandler = authenticationFailureHandler;
 	}
+
+	public void setIgnoreAuthenticationMatcher(ServerWebExchangeMatcher ignoreAuthenticationMatcher) {
+		this.ignoreAuthenticationMatcher = ignoreAuthenticationMatcher;
+	}
+
+	public ServerWebExchangeMatcher getIgnoreAuthenticationMatcher() {
+		return ignoreAuthenticationMatcher;
+	}
+
+	public ServerAuthenticationFailureHandler getAuthenticationFailureHandler() {
+		return authenticationFailureHandler;
+	}
+	
+	
 	
 }
