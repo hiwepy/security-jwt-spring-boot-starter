@@ -6,11 +6,12 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
-import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -58,7 +59,8 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 	private String latitudeHeaderName = LATITUDE_HEADER;
 
 	private ReactiveAuthenticationManager authenticationManager;
-	
+	private ServerWebExchangeMatcher ignoreAuthenticationMatcher = ServerWebExchangeMatchers.anyExchange();
+
 	public JwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager) {
 		this.authenticationManager = authenticationManager;
 	}
@@ -70,29 +72,23 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 
 	@Override
 	public Mono<SecurityContext> load(ServerWebExchange serverWebExchange) {
-		
+		// 1、忽略不需要处理的请求
+		if(this.ignoreAuthenticationMatcher.matches(serverWebExchange).block().isMatch()) {
+			return Mono.empty();
+		}
+		// 2、从请求中提取token，并构造 SecurityContext
 		ServerHttpRequest request = serverWebExchange.getRequest();
-		
-		String token = this.obtainToken(request);
-
-		if (token == null) {
-			token = "";
-		}
-
-		token = token.trim();
-		
-		if(!StringUtils.hasText(token)) {
-			throw new AuthenticationJwtNotFoundException("JWT not provided");
-		}
-
-		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
-		authRequest.setLongitude(this.obtainLongitude(request));
-		authRequest.setLatitude(this.obtainLatitude(request));
-		authRequest.setSign(this.obtainSign(request));
-		
-		return this.authenticationManager
-				.authenticate(authRequest)
-				.map(SecurityContextImpl::new);
+		return Mono.justOrEmpty(this.obtainToken(request)).map(token -> {
+			if(!token.isEmpty()) {
+				JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
+				authRequest.setLongitude(this.obtainLongitude(request));
+				authRequest.setLatitude(this.obtainLatitude(request));
+				authRequest.setSign(this.obtainSign(request));
+				return authRequest;
+			}
+			return null;
+		})
+		.flatMap( authRequest -> this.authenticationManager.authenticate(authRequest).map(SecurityContextImpl::new));
 		
 	}
 	
@@ -130,7 +126,10 @@ public class JwtServerSecurityContextRepository implements ServerSecurityContext
 				token = cookie.getValue();
 			}
 		}
-		return token;
+		if (token == null) {
+			token = "";
+		}
+		return token.trim();
 	}
 
 	public String getAuthorizationHeaderName() {
