@@ -8,7 +8,10 @@ import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.boot.utils.StringUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
@@ -90,8 +93,19 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 					return Mono.justOrEmpty(authRequest);
 				})
 				// 5、调用认证接口，并构造 SecurityContext
-				.flatMap( authRequest -> this.authenticationManager.authenticate(authRequest).map(SecurityContextImpl::new));
-		 
+				.flatMap( authRequest -> this.authenticationManager.authenticate(authRequest))
+				.flatMap(authentication -> onAuthenticationSuccess(authentication, serverWebExchange));
+				 
+		
+	}
+	
+	protected Mono<SecurityContext> onAuthenticationSuccess(Authentication authentication, ServerWebExchange exchange) {
+		SecurityContextImpl securityContext = new SecurityContextImpl();
+		securityContext.setAuthentication(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		return Mono.just(securityContext)
+			.subscriberContext(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)))
+			.cast(SecurityContext.class);
 	}
 	
 	public ServerWebExchangeMatcher getIgnoreAuthenticationMatcher() {
