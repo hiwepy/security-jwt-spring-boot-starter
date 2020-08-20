@@ -15,7 +15,11 @@
  */
 package org.springframework.security.boot.jwt.authentication.server;
 
-import org.springframework.security.boot.biz.authentication.server.MatchedServerAuthenticationFailureHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.security.boot.biz.SpringSecurityBizMessageSource;
+import org.springframework.security.boot.biz.authentication.server.MatchedServerAuthenticationEntryPoint;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtIncorrectException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtInvalidException;
@@ -25,15 +29,19 @@ import org.springframework.security.boot.utils.SubjectUtils;
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * 5、JWT Authentication Failure Handler For WebFlux （负责认证失败处理）
+ * Jwt认证 (authentication)处理端点
+ * @author 		： <a href="https://github.com/hiwepy">wandl</a>
  */
-public class JwtServerAuthenticationFailureHandler implements MatchedServerAuthenticationFailureHandler {
+public class JwtMatchedServerAuthenticationEntryPoint implements MatchedServerAuthenticationEntryPoint {
 
+	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+	
 	@Override
 	public boolean supports(AuthenticationException e) {
 		return SubjectUtils.isAssignableFrom(e.getClass(), AuthenticationJwtIssuedException.class,
 				AuthenticationJwtNotFoundException.class, AuthenticationJwtExpiredException.class,
 				AuthenticationJwtInvalidException.class, AuthenticationJwtIncorrectException.class);
 	}
-    
+
 }

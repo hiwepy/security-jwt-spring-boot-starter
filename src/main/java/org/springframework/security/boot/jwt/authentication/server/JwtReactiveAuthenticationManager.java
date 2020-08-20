@@ -43,7 +43,7 @@ import com.github.hiwepy.jwt.JwtPayload;
 import reactor.core.publisher.Mono;
 
 /**
- * 3、JWT Authentication Manager For WebFlux （负责校验 Authentication 对象）
+ * 3、JWT Authentication Manager For Reactive （负责校验 Authentication 对象）
  */
 public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationManager  {
 

@@ -40,15 +40,15 @@ import com.alibaba.fastjson.JSONObject;
 import reactor.core.publisher.Mono;
 
 /**
- * 4、JWT Authentication Success Handler For WebFlux （负责认证成功处理）
+ * 4、JWT Authentication Success Handler For Reactive （负责认证成功处理）
  */
-public class JwtServerAuthenticationSuccessHandler implements MatchedServerAuthenticationSuccessHandler {
+public class JwtMatchedServerAuthenticationSuccessHandler implements MatchedServerAuthenticationSuccessHandler {
 
 	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
 	private JwtPayloadRepository payloadRepository;
 	private boolean checkExpiry = false;
 	
-	public JwtServerAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository, boolean checkExpiry) {
+	public JwtMatchedServerAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository, boolean checkExpiry) {
 		this.setPayloadRepository(payloadRepository);
 		this.checkExpiry = checkExpiry;
 	}

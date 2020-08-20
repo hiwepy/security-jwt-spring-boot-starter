@@ -15,7 +15,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * 2、JWT Authentication Converter For WebFlux  （负责提取Token）
+ * 2、JWT Authentication Converter For Reactive  （负责提取Token）
  * @author 		： <a href="https://github.com/vindell">vindell</a>
  */
 public class JwtServerAuthenticationConverter implements ServerAuthenticationConverter {
