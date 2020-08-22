@@ -66,7 +66,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 			logger.debug("Processing authentication request : " + authentication);
 		}
     	
-    	//String uid = (String) authentication.getPrincipal();
+    	String uid = (String) authentication.getPrincipal();
         String token = (String) authentication.getCredentials();
 
 		if (!StringUtils.hasText(token)) {
@@ -103,9 +103,9 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		String username = Objects.isNull(claims.get("username")) ? payload.getClientId() : String.valueOf(claims.get("username"));
+		uid = Objects.isNull(uid) ? payload.getClientId() : uid;
 		
-		SecurityPrincipal principal = new SecurityPrincipal(username, payload.getTokenId(), payload.isEnabled(),
+		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
 	
