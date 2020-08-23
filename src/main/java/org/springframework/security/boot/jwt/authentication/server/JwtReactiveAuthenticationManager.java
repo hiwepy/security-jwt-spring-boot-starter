@@ -17,9 +17,10 @@ package org.springframework.security.boot.jwt.authentication.server;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -27,10 +28,11 @@ import org.springframework.security.authentication.AccountStatusUserDetailsCheck
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
+import org.springframework.security.boot.biz.userdetails.UserProfiles;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
+import org.springframework.security.boot.jwt.exception.AuthenticationJwtInvalidException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
@@ -52,6 +54,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 	private final JwtPayloadRepository payloadRepository;
     private UserDetailsChecker userDetailsChecker = new AccountStatusUserDetailsChecker();
     private boolean checkExpiry = false;
+    private boolean checkPrincipal = false;
     
     public JwtReactiveAuthenticationManager(final JwtPayloadRepository payloadRepository) {
         this.payloadRepository = payloadRepository;
@@ -66,10 +69,10 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 			logger.debug("Processing authentication request : " + authentication);
 		}
     	
-    	String uid = (String) authentication.getPrincipal();
+    	String xuid = (String) authentication.getPrincipal();
         String token = (String) authentication.getCredentials();
 
-		if (!StringUtils.hasText(token)) {
+		if (StringUtils.isNoneBlank(token)) {
 			logger.debug("No JWT found in request.");
 			throw new AuthenticationJwtNotFoundException("No JWT found in request.");
 		}
@@ -77,17 +80,22 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		JwtAuthorizationToken jwtToken = (JwtAuthorizationToken) authentication;
 		
 		// 检查token有效性
-		if(isCheckExpiry() && !getPayloadRepository().verify(jwtToken, isCheckExpiry())) {
+		if(this.isCheckExpiry() && !getPayloadRepository().verify(jwtToken, isCheckExpiry())) {
 			throw new AuthenticationJwtExpiredException("Token Expired");
 		}
 		
 		// 解析Token载体信息
 		JwtPayload payload = getPayloadRepository().getPayload(jwtToken, checkExpiry);
 		
+		// 如果 checkPrincipal = true; 则需要验证 X-Uid 值是否有效即传递的值是否和Token中的值相同
+		if(this.isCheckPrincipal() && !StringUtils.equals(xuid, payload.getClientId())) {
+			throw new AuthenticationJwtInvalidException("Token Invalid");
+		}
+		
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		
 		// 角色必须是ROLE_开头，可以在数据库中设置
-        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_"+ payload.getRole());
+        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_"+ payload.getRkey());
         grantedAuthorities.add(grantedAuthority);
    		
    		// 用户权限标记集合
@@ -99,18 +107,19 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		uid = Objects.isNull(uid) ? payload.getClientId() : uid;
+		String uid = StringUtils.defaultString(MapUtils.getString(claims, UserProfiles.UID), payload.getClientId());
 		
 		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
 	
-		principal.setUid(String.valueOf(claims.get("userid")));
-		principal.setUkey(String.valueOf(claims.get("userkey")));
-		principal.setUcode(String.valueOf(claims.get("usercode")));
+		principal.setUid(uid);
+		principal.setUuid(payload.getUuid());
+		principal.setUkey(payload.getUkey());
+		principal.setUcode(payload.getUcode());
 		principal.setPerms(new HashSet<String>(perms));
-		principal.setRid(payload.getRoleid());
-		principal.setRkey(payload.getRole());
+		principal.setRid(payload.getRid());
+		principal.setRkey(payload.getRkey());
 		principal.setRoles(payload.getRoles());
 		principal.setInitial(payload.isInitial());
 		principal.setProfile(payload.getProfile());
@@ -145,5 +154,13 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 
 	public void setCheckExpiry(boolean checkExpiry) {
 		this.checkExpiry = checkExpiry;
+	}
+
+	public boolean isCheckPrincipal() {
+		return checkPrincipal;
+	}
+
+	public void setCheckPrincipal(boolean checkPrincipal) {
+		this.checkPrincipal = checkPrincipal;
 	}
 }

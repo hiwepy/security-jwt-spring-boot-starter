@@ -54,6 +54,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	public JwtAuthorizationProvider jwtAuthorizationProvider(JwtPayloadRepository payloadRepository, SecurityJwtAuthzProperties jwtAuthzProperties) {
 		JwtAuthorizationProvider jwtAuthorizationProvider = new JwtAuthorizationProvider(payloadRepository);
 		jwtAuthorizationProvider.setCheckExpiry(jwtAuthzProperties.isCheckExpiry());
+		jwtAuthorizationProvider.setCheckPrincipal(jwtAuthzProperties.isCheckPrincipal());
 		return jwtAuthorizationProvider;
 	}
 	

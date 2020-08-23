@@ -2,9 +2,10 @@ package org.springframework.security.boot.jwt.authentication;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -12,9 +13,9 @@ import org.springframework.security.authentication.AccountStatusUserDetailsCheck
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
+import org.springframework.security.boot.biz.userdetails.UserProfiles;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -37,6 +38,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 	private final JwtPayloadRepository payloadRepository;
     private UserDetailsChecker userDetailsChecker = new AccountStatusUserDetailsChecker();
     private boolean checkExpiry = false;
+    private boolean checkPrincipal = false;
     
     public JwtAuthorizationProvider(final JwtPayloadRepository payloadRepository) {
         this.payloadRepository = payloadRepository;
@@ -62,7 +64,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
     	//String uid = (String) authentication.getPrincipal();
         String token = (String) authentication.getCredentials();
 
-		if (!StringUtils.hasText(token)) {
+        if (StringUtils.isNoneBlank(token)) {
 			logger.debug("No JWT found in request.");
 			throw new AuthenticationJwtNotFoundException("No JWT found in request.");
 		}
@@ -76,11 +78,16 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		
 		// 解析Token载体信息
 		JwtPayload payload = getPayloadRepository().getPayload(jwtToken, checkExpiry);
+
+		// 检查token有效性
+		if(this.isCheckExpiry() && !getPayloadRepository().verify(jwtToken, isCheckExpiry())) {
+			throw new AuthenticationJwtExpiredException("Token Expired");
+		}
 		
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		
 		// 角色必须是ROLE_开头，可以在数据库中设置
-        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_"+ payload.getRole());
+        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_"+ payload.getRkey());
         grantedAuthorities.add(grantedAuthority);
    		
    		// 用户权限标记集合
@@ -92,18 +99,19 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		String username = Objects.isNull(claims.get("username")) ? payload.getClientId() : String.valueOf(claims.get("username"));
+		String uid = StringUtils.defaultString(MapUtils.getString(claims, UserProfiles.UID), payload.getClientId());
 		
-		SecurityPrincipal principal = new SecurityPrincipal(username, payload.getTokenId(), payload.isEnabled(),
+		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
 				grantedAuthorities);
 	
-		principal.setUid(String.valueOf(claims.get("userid")));
-		principal.setUkey(String.valueOf(claims.get("userkey")));
-		principal.setUcode(String.valueOf(claims.get("usercode")));
+		principal.setUid(uid);
+		principal.setUuid(payload.getUuid());
+		principal.setUkey(payload.getUkey());
+		principal.setUcode(payload.getUcode());
 		principal.setPerms(new HashSet<String>(perms));
-		principal.setRid(payload.getRoleid());
-		principal.setRkey(payload.getRole());
+		principal.setRid(payload.getRid());
+		principal.setRkey(payload.getRkey());
 		principal.setRoles(payload.getRoles());
 		principal.setInitial(payload.isInitial());
 		principal.setProfile(payload.getProfile());
@@ -143,6 +151,14 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 
 	public void setCheckExpiry(boolean checkExpiry) {
 		this.checkExpiry = checkExpiry;
+	}
+
+	public boolean isCheckPrincipal() {
+		return checkPrincipal;
+	}
+
+	public void setCheckPrincipal(boolean checkPrincipal) {
+		this.checkPrincipal = checkPrincipal;
 	}
     
 }

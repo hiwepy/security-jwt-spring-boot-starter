@@ -78,8 +78,11 @@ public class ReactiveSecurityJwtAuthcFilterConfiguration {
 	  */
 	@Bean
 	@ConditionalOnMissingBean
-	public ReactiveAuthenticationManager jwtReactiveAuthenticationManager(JwtPayloadRepository payloadRepository) {
-		return new JwtReactiveAuthenticationManager(payloadRepository);
+	public ReactiveAuthenticationManager jwtReactiveAuthenticationManager(JwtPayloadRepository payloadRepository, SecurityJwtAuthzProperties jwtAuthzProperties) {
+		JwtReactiveAuthenticationManager jwtAuthenticationManager = new JwtReactiveAuthenticationManager(payloadRepository);
+		jwtAuthenticationManager.setCheckExpiry(jwtAuthzProperties.isCheckExpiry());
+		jwtAuthenticationManager.setCheckPrincipal(jwtAuthzProperties.isCheckPrincipal());
+		return  jwtAuthenticationManager;
 	}
 	
 	/* @Bean
