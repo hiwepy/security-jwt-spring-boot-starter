@@ -14,9 +14,18 @@ public class JwtAuthorizationToken extends AbstractAuthenticationToken {
 
 	private final Object principal;
 	private Object credentials;
+	/**
+	 * 请求参数签名（可选）
+	 */
 	private String sign;
-	private String longitude;
-	private String latitude;
+	/**
+	 * 用户最新经度（可选）
+	 */
+	private double longitude;
+	/**
+	 * 用户最新纬度（可选）
+	 */
+	private double latitude;
     
     public JwtAuthorizationToken( Object principal, Object credentials) {
         super(null);
@@ -66,19 +75,19 @@ public class JwtAuthorizationToken extends AbstractAuthenticationToken {
 		this.sign = sign;
 	}
 
-	public String getLongitude() {
+	public double getLongitude() {
 		return longitude;
 	}
 
-	public void setLongitude(String longitude) {
+	public void setLongitude(double longitude) {
 		this.longitude = longitude;
 	}
 
-	public String getLatitude() {
+	public double getLatitude() {
 		return latitude;
 	}
 
-	public void setLatitude(String latitude) {
+	public void setLatitude(double latitude) {
 		this.latitude = latitude;
 	}
     

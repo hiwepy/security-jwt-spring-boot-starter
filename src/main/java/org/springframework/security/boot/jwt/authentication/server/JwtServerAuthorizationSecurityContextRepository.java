@@ -2,12 +2,12 @@ package org.springframework.security.boot.jwt.authentication.server;
 
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
@@ -27,6 +27,8 @@ import reactor.core.publisher.Mono;
  * @author 		： <a href="https://github.com/vindell">vindell</a>
  */
 public class JwtServerAuthorizationSecurityContextRepository implements ServerSecurityContextRepository {
+	
+	public static final String DEFAULT_LONGITUDE_LATITUDE = "0.000000";
 	
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
@@ -95,8 +97,6 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 				// 5、调用认证接口，并构造 SecurityContext
 				.flatMap( authRequest -> this.authenticationManager.authenticate(authRequest))
 				.flatMap(authentication -> onAuthenticationSuccess(authentication, serverWebExchange));
-				 
-		
 	}
 	
 	protected Mono<SecurityContext> onAuthenticationSuccess(Authentication authentication, ServerWebExchange exchange) {
@@ -120,12 +120,12 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 		return request.getHeaders().getFirst(getUidHeaderName());
 	}
 
-	protected String obtainLongitude(ServerHttpRequest request) {
-		return request.getHeaders().getFirst(getLongitudeHeaderName());
+	protected double obtainLongitude(ServerHttpRequest request) {
+		return Double.parseDouble(StringUtils.defaultString(request.getHeaders().getFirst(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
-	protected String obtainLatitude(ServerHttpRequest request) {
-		return request.getHeaders().getFirst(getLatitudeHeaderName());
+	protected double obtainLatitude(ServerHttpRequest request) {
+		return Double.parseDouble(StringUtils.defaultString(request.getHeaders().getFirst(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected String obtainSign(ServerHttpRequest request) {

@@ -2,11 +2,11 @@ package org.springframework.security.boot.jwt.authentication.server;
 
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.util.MultiValueMap;
@@ -19,6 +19,8 @@ import reactor.core.publisher.Mono;
  * @author 		： <a href="https://github.com/vindell">vindell</a>
  */
 public class JwtServerAuthenticationConverter implements ServerAuthenticationConverter {
+	
+	public static final String DEFAULT_LONGITUDE_LATITUDE = "0.000000";
 	
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
@@ -75,12 +77,12 @@ public class JwtServerAuthenticationConverter implements ServerAuthenticationCon
 		return request.getHeaders().getFirst(getUidHeaderName());
 	}
 
-	protected String obtainLongitude(ServerHttpRequest request) {
-		return request.getHeaders().getFirst(getLongitudeHeaderName());
+	protected double obtainLongitude(ServerHttpRequest request) {
+		return Double.parseDouble(StringUtils.defaultString(request.getHeaders().getFirst(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
-	protected String obtainLatitude(ServerHttpRequest request) {
-		return request.getHeaders().getFirst(getLatitudeHeaderName());
+	protected double obtainLatitude(ServerHttpRequest request) {
+		return Double.parseDouble(StringUtils.defaultString(request.getHeaders().getFirst(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected String obtainSign(ServerHttpRequest request) {

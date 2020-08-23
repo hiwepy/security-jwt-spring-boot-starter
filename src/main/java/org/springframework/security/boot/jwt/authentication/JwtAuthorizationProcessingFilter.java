@@ -28,10 +28,10 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
-import org.springframework.security.boot.utils.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
@@ -47,7 +47,9 @@ import org.springframework.util.CollectionUtils;
  * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProcessingFilter {
-
+	
+	public static final String DEFAULT_LONGITUDE_LATITUDE = "0.000000";
+	
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
 	 */
@@ -176,7 +178,7 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 
 		token = token.trim();
 		
-		if(!StringUtils.hasText(token)) {
+		if(StringUtils.isBlank(token)) {
 			throw new AuthenticationJwtNotFoundException("JWT not provided");
 		}
 
@@ -199,12 +201,12 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		return request.getHeader(getUidHeaderName());
 	}
 
-	protected String obtainLongitude(HttpServletRequest request) {
-		return request.getHeader(getLongitudeHeaderName());
+	protected double obtainLongitude(HttpServletRequest request) {
+		return Double.parseDouble(StringUtils.defaultString(request.getHeader(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
-	protected String obtainLatitude(HttpServletRequest request) {
-		return request.getHeader(getLatitudeHeaderName());
+	protected double obtainLatitude(HttpServletRequest request) {
+		return Double.parseDouble(StringUtils.defaultString(request.getHeader(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected String obtainSign(HttpServletRequest request) {
