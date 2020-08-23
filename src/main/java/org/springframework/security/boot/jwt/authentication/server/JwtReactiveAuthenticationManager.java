@@ -83,10 +83,6 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		
 		// 解析Token载体信息
 		JwtPayload payload = getPayloadRepository().getPayload(jwtToken, checkExpiry);
-		payload.setAccountNonExpired(true);
-		payload.setAccountNonLocked(true);
-		payload.setEnabled(true);
-		payload.setCredentialsNonExpired(true);
 		
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		
