@@ -121,11 +121,11 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 	}
 
 	protected double obtainLongitude(ServerHttpRequest request) {
-		return Double.parseDouble(StringUtils.defaultString(request.getHeaders().getFirst(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
+		return Double.parseDouble(StringUtils.defaultIfBlank(request.getHeaders().getFirst(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected double obtainLatitude(ServerHttpRequest request) {
-		return Double.parseDouble(StringUtils.defaultString(request.getHeaders().getFirst(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
+		return Double.parseDouble(StringUtils.defaultIfBlank(request.getHeaders().getFirst(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected String obtainSign(ServerHttpRequest request) {
