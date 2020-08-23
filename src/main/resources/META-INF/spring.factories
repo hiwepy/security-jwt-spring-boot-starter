@@ -2,4 +2,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.security.boot.SecurityJwtAuthcFilterConfiguration,\
 org.springframework.security.boot.SecurityJwtAuthzFilterConfiguration,\
-org.springframework.security.boot.ReactiveSecurityJwtAuthcFilterConfiguration
+org.springframework.security.boot.ReactiveSecurityJwtAutoConfiguration
