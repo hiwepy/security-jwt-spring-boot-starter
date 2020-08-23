@@ -28,7 +28,6 @@ import org.springframework.security.authentication.AccountStatusUserDetailsCheck
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
-import org.springframework.security.boot.biz.userdetails.UserProfiles;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationToken;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtInvalidException;
@@ -40,6 +39,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
 
+import com.github.hiwepy.jwt.JwtClaims;
 import com.github.hiwepy.jwt.JwtPayload;
 
 import reactor.core.publisher.Mono;
@@ -107,7 +107,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		String uid = StringUtils.defaultString(MapUtils.getString(claims, UserProfiles.UID), payload.getClientId());
+		String uid = StringUtils.defaultString(MapUtils.getString(claims, JwtClaims.UID), payload.getClientId());
 		
 		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),

@@ -13,7 +13,6 @@ import org.springframework.security.authentication.AccountStatusUserDetailsCheck
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.SecurityPrincipal;
-import org.springframework.security.boot.biz.userdetails.UserProfiles;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtExpiredException;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.core.Authentication;
@@ -24,6 +23,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
 
+import com.github.hiwepy.jwt.JwtClaims;
 import com.github.hiwepy.jwt.JwtPayload;
 
 /**
@@ -99,7 +99,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		String uid = StringUtils.defaultString(MapUtils.getString(claims, UserProfiles.UID), payload.getClientId());
+		String uid = StringUtils.defaultString(MapUtils.getString(claims, JwtClaims.UID), payload.getClientId());
 		
 		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
