@@ -121,6 +121,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		principal.setRid(payload.getRid());
 		principal.setRkey(payload.getRkey());
 		principal.setRoles(payload.getRoles());
+		principal.setBound(payload.isBound());
 		principal.setInitial(payload.isInitial());
 		principal.setProfile(payload.getProfile());
 		principal.setSign(jwtToken.getSign());
