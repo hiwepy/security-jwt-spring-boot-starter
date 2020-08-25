@@ -202,11 +202,11 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	}
 
 	protected double obtainLongitude(HttpServletRequest request) {
-		return Double.parseDouble(StringUtils.defaultString(request.getHeader(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
+		return Double.parseDouble(StringUtils.defaultIfBlank(request.getHeader(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected double obtainLatitude(HttpServletRequest request) {
-		return Double.parseDouble(StringUtils.defaultString(request.getHeader(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
+		return Double.parseDouble(StringUtils.defaultIfBlank(request.getHeader(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
 	}
 	
 	protected String obtainSign(HttpServletRequest request) {

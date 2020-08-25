@@ -231,9 +231,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    	        	.exceptionHandling()
    	        	.authenticationEntryPoint(authenticationEntryPoint)
    	        	.and()
-   	        	.httpBasic()
-   	        	.authenticationEntryPoint(authenticationEntryPoint)
-   	        	.and()
+   	        	.httpBasic().disable()
    	        	.antMatcher(authcProperties.getPathPattern())
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
    	    	
