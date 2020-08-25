@@ -57,6 +57,9 @@ public class ReactiveSecurityJwtAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public ServerSecurityContextRepository jwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager) {
+		
+		
+		
 		return new JwtServerAuthorizationSecurityContextRepository(authenticationManager, ServerWebExchangeMatchers.anyExchange());
 	}
 	
