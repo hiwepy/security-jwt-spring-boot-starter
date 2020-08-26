@@ -1,6 +1,7 @@
 package org.springframework.security.boot.jwt.authentication.server;
 
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpCookie;
@@ -14,7 +15,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
-import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -64,11 +65,12 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 	private String latitudeHeaderName = LATITUDE_HEADER;
 
 	private ReactiveAuthenticationManager authenticationManager;
-	private ServerWebExchangeMatcher ignoreAuthenticationMatcher;
+	private String[] whiteList;
+	private AntPathMatcher antPathMatcher = new AntPathMatcher();
 
-	public JwtServerAuthorizationSecurityContextRepository(ReactiveAuthenticationManager authenticationManager, ServerWebExchangeMatcher ignoreAuthenticationMatcher) {
+	public JwtServerAuthorizationSecurityContextRepository(ReactiveAuthenticationManager authenticationManager, String... whiteList) {
 		this.authenticationManager = authenticationManager;
-		this.ignoreAuthenticationMatcher = ignoreAuthenticationMatcher;
+		this.whiteList = whiteList;
 	}
 
 	@Override
@@ -79,11 +81,11 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 	@Override
 	public Mono<SecurityContext> load(ServerWebExchange serverWebExchange) {
 		ServerHttpRequest request = serverWebExchange.getRequest();
-		return this.ignoreAuthenticationMatcher.matches(serverWebExchange)
-				// 1、过滤忽略的请求
-				.filter( matchResult -> !matchResult.isMatch())
-				// 2、从请求中提取token
-				.flatMap( matchResult -> Mono.just(this.obtainToken(request)))
+		boolean match = Stream.of(whiteList).anyMatch(path -> getAntPathMatcher().match(path, request.getPath().toString()));
+		if (match){
+			return Mono.empty();
+		}
+		return Mono.just(request).flatMap( matchResult -> Mono.just(this.obtainToken(request)))
 				// 3、没有获取到，则抛出异常
 				.switchIfEmpty(Mono.defer(() -> Mono.error(new AuthenticationJwtNotFoundException("Token not provided"))))
 				// 4、构造 JwtAuthorizationToken
@@ -108,12 +110,16 @@ public class JwtServerAuthorizationSecurityContextRepository implements ServerSe
 			.cast(SecurityContext.class);
 	}
 	
-	public ServerWebExchangeMatcher getIgnoreAuthenticationMatcher() {
-		return ignoreAuthenticationMatcher;
+	public AntPathMatcher getAntPathMatcher() {
+		return antPathMatcher;
 	}
 
-	public void setIgnoreAuthenticationMatcher(ServerWebExchangeMatcher ignoreAuthenticationMatcher) {
-		this.ignoreAuthenticationMatcher = ignoreAuthenticationMatcher;
+	public void setAntPathMatcher(AntPathMatcher antPathMatcher) {
+		this.antPathMatcher = antPathMatcher;
+	}
+
+	public String[] getWhiteList() {
+		return whiteList;
 	}
 
 	protected String obtainUid(ServerHttpRequest request) {

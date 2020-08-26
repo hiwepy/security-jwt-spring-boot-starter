@@ -17,7 +17,6 @@ import org.springframework.security.boot.jwt.authentication.server.JwtServerAuth
 import org.springframework.security.boot.jwt.authentication.server.JwtServerAuthorizationSecurityContextRepository;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
-import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 
 @Configuration
 @AutoConfigureBefore({ ReactiveSecurityAutoConfiguration.class })
@@ -57,7 +56,7 @@ public class ReactiveSecurityJwtAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public ServerSecurityContextRepository jwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager) {
-		return new JwtServerAuthorizationSecurityContextRepository(authenticationManager, ServerWebExchangeMatchers.anyExchange());
+		return new JwtServerAuthorizationSecurityContextRepository(authenticationManager, "/webjars/**");
 	}
 	
 	/**
