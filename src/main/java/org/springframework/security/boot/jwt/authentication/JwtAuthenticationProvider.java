@@ -50,7 +50,8 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     	if (logger.isDebugEnabled()) {
 			logger.debug("Processing authentication request : " + authentication);
 		}
- 
+    	
+    	JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) authentication;
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
         
@@ -74,6 +75,10 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         
         JwtAuthenticationToken authenticationToken = null;
         if(SecurityPrincipal.class.isAssignableFrom(ud.getClass())) {
+        	SecurityPrincipal principal = (SecurityPrincipal) ud;
+        	principal.setSign(jwtToken.getSign());
+    		principal.setLongitude(jwtToken.getLongitude());
+    		principal.setLatitude(jwtToken.getLatitude());
         	authenticationToken = new JwtAuthenticationToken(ud, ud.getPassword(), ud.getAuthorities());        	
         } else {
         	authenticationToken = new JwtAuthenticationToken(ud.getUsername(), ud.getPassword(), ud.getAuthorities());

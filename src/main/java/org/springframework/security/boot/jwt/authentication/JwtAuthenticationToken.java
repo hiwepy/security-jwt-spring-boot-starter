@@ -27,14 +27,24 @@ import org.springframework.security.core.GrantedAuthority;
 @SuppressWarnings("serial")
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
-	
-	
 	// ~ Instance fields
 	// ================================================================================================
 
 	private final Object principal;
 	private Object credentials;
-
+	/**
+	 * 请求参数签名（可选）
+	 */
+	private String sign;
+	/**
+	 * 用户最新经度（可选）
+	 */
+	private double longitude;
+	/**
+	 * 用户最新纬度（可选）
+	 */
+	private double latitude;
+	
 	// ~ Constructors
 	// ===================================================================================================
 
@@ -93,6 +103,30 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 	public void eraseCredentials() {
 		super.eraseCredentials();
 		credentials = null;
+	}
+	
+	public String getSign() {
+		return sign;
+	}
+
+	public void setSign(String sign) {
+		this.sign = sign;
+	}
+
+	public double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(double longitude) {
+		this.longitude = longitude;
+	}
+
+	public double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(double latitude) {
+		this.latitude = latitude;
 	}
 
 }
