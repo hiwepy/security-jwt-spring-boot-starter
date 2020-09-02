@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.biz.web.servlet.i18n.LocaleContextFilter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,7 +25,6 @@ import org.springframework.security.boot.biz.authentication.captcha.CaptchaResol
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationEntryPoint;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
-import org.springframework.security.boot.biz.i18n.LocaleContextFilter;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
@@ -50,6 +50,7 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
+import org.springframework.web.filter.RequestContextFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -97,7 +98,8 @@ public class SecurityJwtAuthcFilterConfiguration {
     	
 		private final SecurityJwtAuthcProperties authcProperties;
 		
-		private final LocaleContextFilter localeContextFilter;
+		private final RequestContextFilter requestContextFilter;
+    	private final LocaleContextFilter localeContextFilter;
 		private final AuthenticatingFailureCounter authenticatingFailureCounter;
 	    private final AuthenticationEntryPoint authenticationEntryPoint;
 	    private final AuthenticationSuccessHandler authenticationSuccessHandler;
@@ -119,6 +121,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 				SecurityBizProperties bizProperties,
    				SecurityJwtAuthcProperties authcProperties,
    				
+   				ObjectProvider<RequestContextFilter> requestContextProvider,
    				ObjectProvider<LocaleContextFilter> localeContextProvider,
    				ObjectProvider<AuthenticationProvider> authenticationProvider,
    				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
@@ -141,6 +144,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    			
    			this.authcProperties = authcProperties;
    			
+   			this.requestContextFilter = requestContextProvider.getIfAvailable();
    			this.localeContextFilter = localeContextProvider.getIfAvailable();
    			this.authenticatingFailureCounter = super.authenticatingFailureCounter();
    			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
@@ -240,6 +244,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    	        	.and()
    	        	.httpBasic().disable()
    	        	.antMatcher(authcProperties.getPathPattern())
+   	        	.addFilterBefore(requestContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(localeContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
    	    	
