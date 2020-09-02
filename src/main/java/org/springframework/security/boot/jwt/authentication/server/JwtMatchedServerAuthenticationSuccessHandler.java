@@ -17,7 +17,6 @@ package org.springframework.security.boot.jwt.authentication.server;
 
 import java.nio.charset.StandardCharsets;
 
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -69,7 +68,7 @@ public class JwtMatchedServerAuthenticationSuccessHandler implements MatchedServ
 		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
 		// 3、国际化后的异常信息
-		String message = messages.getMessage(AuthResponseCode.SC_AUTHC_SUCCESS.getMsgKey(), LocaleContextHolder.getLocale());
+		String message = messages.getMessage(AuthResponseCode.SC_AUTHC_SUCCESS.getMsgKey());
 		
 		// 4、获取认证账号详情
 		UserProfilePayload profilePayload = getPayloadRepository().getProfilePayload((AbstractAuthenticationToken) authentication, isCheckExpiry());
