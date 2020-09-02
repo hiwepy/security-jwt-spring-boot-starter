@@ -9,6 +9,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,6 +25,7 @@ import org.springframework.security.boot.biz.authentication.AuthenticationListen
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationEntryPoint;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationFailureHandler;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
+import org.springframework.security.boot.biz.i18n.LocaleContextFilter;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
 import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
@@ -45,6 +47,7 @@ import org.springframework.util.CollectionUtils;
 
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
 public class SecurityJwtAuthzFilterConfiguration {
@@ -69,6 +72,7 @@ public class SecurityJwtAuthzFilterConfiguration {
     	private final SecurityJwtAuthcProperties authcProperties;
     	private final SecurityJwtAuthzProperties authzProperties;
     	
+    	private final LocaleContextFilter localeContextFilter;
 	    private final AuthenticationEntryPoint authenticationEntryPoint;
 	    private final AuthenticationSuccessHandler authenticationSuccessHandler;
 	    private final AuthenticationFailureHandler authenticationFailureHandler;
@@ -85,6 +89,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    				SecurityJwtAuthcProperties authcProperties,
    				SecurityJwtAuthzProperties authzProperties,
    				
+   				ObjectProvider<LocaleContextFilter> localeContextProvider,
    				ObjectProvider<AuthenticationProvider> authenticationProvider,
    				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
    				ObjectProvider<AuthenticationListener> authenticationListenerProvider,
@@ -108,6 +113,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    			this.authcProperties = authcProperties;
    			this.authzProperties = authzProperties;
    			
+   			this.localeContextFilter = localeContextProvider.getIfAvailable();
    			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
    			this.authenticationEntryPoint = super.authenticationEntryPoint(authenticationEntryPointProvider.stream().collect(Collectors.toList()));
    			this.authenticationSuccessHandler = new JwtAuthorizationSuccessHandler();
@@ -193,6 +199,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    	        	.authenticationEntryPoint(authenticationEntryPoint)
    	        	.and()
    	        	.antMatcher(authzProperties.getPathPattern())
+   	        	.addFilterBefore(localeContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
 
    	    	super.configure(http, authzProperties.getCros());
