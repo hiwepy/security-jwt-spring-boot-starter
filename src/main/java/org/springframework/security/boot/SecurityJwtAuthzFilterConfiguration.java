@@ -44,7 +44,6 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.filter.RequestContextFilter;
 
 @Configuration
 @AutoConfigureBefore({ SecurityFilterAutoConfiguration.class })
@@ -73,7 +72,6 @@ public class SecurityJwtAuthzFilterConfiguration {
     	private final SecurityJwtAuthcProperties authcProperties;
     	private final SecurityJwtAuthzProperties authzProperties;
     	
-    	private final RequestContextFilter requestContextFilter;
     	private final LocaleContextFilter localeContextFilter;
 	    private final AuthenticationEntryPoint authenticationEntryPoint;
 	    private final AuthenticationSuccessHandler authenticationSuccessHandler;
@@ -91,7 +89,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    				SecurityJwtAuthcProperties authcProperties,
    				SecurityJwtAuthzProperties authzProperties,
    				
-   				ObjectProvider<RequestContextFilter> requestContextProvider,
    				ObjectProvider<LocaleContextFilter> localeContextProvider,
    				ObjectProvider<AuthenticationProvider> authenticationProvider,
    				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
@@ -115,7 +112,6 @@ public class SecurityJwtAuthzFilterConfiguration {
    			this.bizProperties = bizProperties;
    			this.authcProperties = authcProperties;
    			this.authzProperties = authzProperties;
-   			this.requestContextFilter = requestContextProvider.getIfAvailable();
    			this.localeContextFilter = localeContextProvider.getIfAvailable();
    			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
    			this.authenticationEntryPoint = super.authenticationEntryPoint(authenticationEntryPointProvider.stream().collect(Collectors.toList()));
@@ -202,7 +198,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    	        	.authenticationEntryPoint(authenticationEntryPoint)
    	        	.and()
    	        	.antMatcher(authzProperties.getPathPattern())
-   	        	.addFilterBefore(requestContextFilter, UsernamePasswordAuthenticationFilter.class)
+   	        	//.addFilterBefore(requestContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(localeContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
 

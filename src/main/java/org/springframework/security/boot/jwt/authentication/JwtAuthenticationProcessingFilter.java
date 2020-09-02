@@ -1,11 +1,16 @@
 package org.springframework.security.boot.jwt.authentication;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.boot.biz.authentication.PostRequestAuthenticationProcessingFilter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -36,6 +41,15 @@ public class JwtAuthenticationProcessingFilter extends PostRequestAuthentication
 	
 	public JwtAuthenticationProcessingFilter(ObjectMapper objectMapper) {
 		super(objectMapper, new AntPathRequestMatcher("/login/jwt", "POST"));
+	}
+	
+	
+	@Override
+	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+			throws AuthenticationException {
+		ServletRequestAttributes requestAttributes = new ServletRequestAttributes(request, response);
+		RequestContextHolder.setRequestAttributes(requestAttributes, true);
+		return super.attemptAuthentication(request, response);
 	}
 	
 	@Override

@@ -40,6 +40,8 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Jwt授权 (authorization)过滤器
@@ -117,6 +119,9 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
+		ServletRequestAttributes requestAttributes = new ServletRequestAttributes(request, response);
+		RequestContextHolder.setRequestAttributes(requestAttributes, true);
+		
 		if (!requiresAuthentication(request, response)) {
 			chain.doFilter(request, response);
 			return;

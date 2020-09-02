@@ -50,7 +50,6 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
-import org.springframework.web.filter.RequestContextFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -98,7 +97,6 @@ public class SecurityJwtAuthcFilterConfiguration {
     	
 		private final SecurityJwtAuthcProperties authcProperties;
 		
-		private final RequestContextFilter requestContextFilter;
     	private final LocaleContextFilter localeContextFilter;
 		private final AuthenticatingFailureCounter authenticatingFailureCounter;
 	    private final AuthenticationEntryPoint authenticationEntryPoint;
@@ -121,7 +119,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 				SecurityBizProperties bizProperties,
    				SecurityJwtAuthcProperties authcProperties,
    				
-   				ObjectProvider<RequestContextFilter> requestContextProvider,
    				ObjectProvider<LocaleContextFilter> localeContextProvider,
    				ObjectProvider<AuthenticationProvider> authenticationProvider,
    				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
@@ -144,7 +141,6 @@ public class SecurityJwtAuthcFilterConfiguration {
    			
    			this.authcProperties = authcProperties;
    			
-   			this.requestContextFilter = requestContextProvider.getIfAvailable();
    			this.localeContextFilter = localeContextProvider.getIfAvailable();
    			this.authenticatingFailureCounter = super.authenticatingFailureCounter();
    			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
@@ -244,7 +240,7 @@ public class SecurityJwtAuthcFilterConfiguration {
    	        	.and()
    	        	.httpBasic().disable()
    	        	.antMatcher(authcProperties.getPathPattern())
-   	        	.addFilterBefore(requestContextFilter, UsernamePasswordAuthenticationFilter.class)
+   	        	//.addFilterBefore(requestContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(localeContextFilter, UsernamePasswordAuthenticationFilter.class)
    	        	.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class); 
    	    	
