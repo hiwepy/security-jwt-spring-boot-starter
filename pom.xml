@@ -13,7 +13,7 @@
 	<groupId>com.github.hiwepy</groupId>
 	<artifactId>security-jwt-spring-boot-starter</artifactId>
 	<description>Spring Boot Starter For Spring Security With JWT</description>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.1.RELEASE</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://github.com/hiwepy/${project.artifactId}</url>
 	<packaging>jar</packaging>
@@ -374,7 +374,7 @@
 		<maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
 		<fastjson.version>1.2.73</fastjson.version>
 		<jwt-issuer.version>1.0.6.RELEASE</jwt-issuer.version>
-		<security-biz-spring-boot-starter.version>1.0.0.RELEASE</security-biz-spring-boot-starter.version>
+		<security-biz-spring-boot-starter.version>1.0.1.RELEASE</security-biz-spring-boot-starter.version>
 	</properties>
 	
 	<dependencyManagement>
