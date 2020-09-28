@@ -7,7 +7,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.biz.web.servlet.i18n.LocaleContextFilter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
@@ -27,13 +26,9 @@ import org.springframework.security.boot.biz.authentication.nested.MatchedAuthen
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationSuccessHandler;
 import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
 import org.springframework.security.boot.biz.property.SecuritySessionMgtProperties;
-import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.biz.userdetails.UserDetailsServiceAdapter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthenticationProvider;
-import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthcOrAuthzFailureHandler;
-import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationEntryPoint;
-import org.springframework.security.boot.jwt.authentication.JwtMatchedAuthenticationSuccessHandler;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
@@ -60,30 +55,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
 public class SecurityJwtAuthcFilterConfiguration {
 
-	@Bean
-	@ConditionalOnMissingBean
-	public JwtMatchedAuthenticationEntryPoint jwtMatchedAuthenticationEntryPoint() {
-		return new JwtMatchedAuthenticationEntryPoint();
-	}
-	
-	@Bean
-	@ConditionalOnMissingBean
-	public JwtMatchedAuthcOrAuthzFailureHandler jwtMatchedAuthcOrAuthzFailureHandler() {
-		return new JwtMatchedAuthcOrAuthzFailureHandler();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public JwtMatchedAuthenticationSuccessHandler jwtMatchedAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository) {
-		return new JwtMatchedAuthenticationSuccessHandler(payloadRepository);
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public JwtPayloadRepository payloadRepository() {
-		return new JwtPayloadRepository() {};
-	}
-	
 	@Bean
 	public JwtAuthenticationProvider jwtAuthenticationProvider(UserDetailsServiceAdapter userDetailsService, PasswordEncoder passwordEncoder) {
 		return new JwtAuthenticationProvider(userDetailsService, passwordEncoder);
