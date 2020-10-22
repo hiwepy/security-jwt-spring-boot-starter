@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * 2、JWT Authentication Converter For Reactive  （负责提取Token）
- * @author 		： <a href="https://github.com/vindell">vindell</a>
+ * @author 		： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtServerAuthenticationConverter implements ServerAuthenticationConverter {
 	

@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
  * 1、JWT Authorization Security Context Repository For Reactive （负责提取Token，构造 SecurityContext 对象）
  * https://www.jianshu.com/p/e013ca21d91d
  * https://www.baeldung.com/spring-oauth-login-webflux
- * @author 		： <a href="https://github.com/vindell">vindell</a>
+ * @author 		： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtServerAuthorizationSecurityContextRepository implements ServerSecurityContextRepository {
 	
