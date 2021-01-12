@@ -31,10 +31,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.boot.biz.authentication.AuthenticationProcessingFilter;
 import org.springframework.security.boot.jwt.exception.AuthenticationJwtNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -48,9 +48,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * 
  * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
-public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProcessingFilter {
-	
-	public static final String DEFAULT_LONGITUDE_LATITUDE = "0.000000";
+public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFilter {
 	
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
@@ -60,30 +58,10 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 	 * HTTP Authorization header, equal to <code>X-Authorization</code>
 	 */
 	public static final String AUTHORIZATION_HEADER = "X-Authorization";
-	/**
-	 * HTTP Authorization header, equal to <code>X-Uid</code>
-	 */
-	public static final String UID_HEADER = "X-Uid";
-	/**
-	 * HTTP Authorization header, equal to <code>X-Sign</code>
-	 */
-	public static final String SIGN_HEADER = "X-Sign";
-	/**
-	 * HTTP Authorization header, equal to <code>X-Longitude</code>
-	 */
-	public static final String LONGITUDE_HEADER = "X-Longitude";
-	/**
-	 * HTTP Authorization header, equal to <code>X-Latitude</code>
-	 */
-	public static final String LATITUDE_HEADER = "X-Latitude";
-
+	
 	private String authorizationHeaderName = AUTHORIZATION_HEADER;
 	private String authorizationParamName = AUTHORIZATION_PARAM;
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
-	private String uidHeaderName = UID_HEADER;
-	private String signHeaderName = SIGN_HEADER;
-	private String longitudeHeaderName = LONGITUDE_HEADER;
-	private String latitudeHeaderName = LATITUDE_HEADER;
 	
 	private List<RequestMatcher> ignoreRequestMatchers;
 	
@@ -170,9 +148,9 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		super.setSessionAuthenticationStrategy(sessionStrategy);
 		this.sessionStrategy = sessionStrategy;
 	}
-
+	
 	@Override
-	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+	public Authentication doAttemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
 
 		String token = this.obtainToken(request);
@@ -186,7 +164,7 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		if(StringUtils.isBlank(token)) {
 			throw new AuthenticationJwtNotFoundException("JWT not provided");
 		}
-
+		
 		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
 		authRequest.setLongitude(this.obtainLongitude(request));
 		authRequest.setLatitude(this.obtainLatitude(request));
@@ -194,7 +172,7 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		
 		// Allow subclasses to set the "details" property
 		setDetails(request, authRequest);
-
+		
 		return this.getAuthenticationManager().authenticate(authRequest);
 	}
 
@@ -202,23 +180,6 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 		authRequest.setDetails(authenticationDetailsSource.buildDetails(request));
 	}
 	
-	protected String obtainUid(HttpServletRequest request) {
-		return request.getHeader(getUidHeaderName());
-	}
-
-	protected double obtainLongitude(HttpServletRequest request) {
-		return Double.parseDouble(StringUtils.defaultIfBlank(request.getHeader(getLongitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
-	}
-	
-	protected double obtainLatitude(HttpServletRequest request) {
-		return Double.parseDouble(StringUtils.defaultIfBlank(request.getHeader(getLatitudeHeaderName()), DEFAULT_LONGITUDE_LATITUDE));
-	}
-	
-	protected String obtainSign(HttpServletRequest request) {
-		return request.getHeader(getSignHeaderName());
-	}
-
-
 	protected String obtainToken(HttpServletRequest request) {
 
 		// 从header中获取token
@@ -277,38 +238,6 @@ public class JwtAuthorizationProcessingFilter extends AbstractAuthenticationProc
 
 	public void setAuthorizationCookieName(String authorizationCookieName) {
 		this.authorizationCookieName = authorizationCookieName;
-	}
-
-	public String getUidHeaderName() {
-		return uidHeaderName;
-	}
-
-	public void setUidHeaderName(String uidHeaderName) {
-		this.uidHeaderName = uidHeaderName;
-	}
-
-	public String getSignHeaderName() {
-		return signHeaderName;
-	}
-
-	public void setSignHeaderName(String signHeaderName) {
-		this.signHeaderName = signHeaderName;
-	}
-
-	public String getLongitudeHeaderName() {
-		return longitudeHeaderName;
-	}
-
-	public void setLongitudeHeaderName(String longitudeHeaderName) {
-		this.longitudeHeaderName = longitudeHeaderName;
-	}
-
-	public String getLatitudeHeaderName() {
-		return latitudeHeaderName;
-	}
-
-	public void setLatitudeHeaderName(String latitudeHeaderName) {
-		this.latitudeHeaderName = latitudeHeaderName;
 	}
 
 }
