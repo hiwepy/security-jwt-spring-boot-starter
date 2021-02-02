@@ -15,7 +15,7 @@ security starter for spring boot
 <dependency>
 	<groupId>${project.groupId}</groupId>
 	<artifactId>security-jwt-spring-boot-starter</artifactId>
-	<version>${project.version}</version>
+	<version>1.0.5.RELEASE</version>
 </dependency>
 ```
 
