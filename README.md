@@ -13,7 +13,7 @@ security starter for spring boot
 
 ``` xml
 <dependency>
-	<groupId>${project.groupId}</groupId>
+	<groupId>com.github.hiwepy</groupId>
 	<artifactId>security-jwt-spring-boot-starter</artifactId>
 	<version>${project.version}</version>
 </dependency>
