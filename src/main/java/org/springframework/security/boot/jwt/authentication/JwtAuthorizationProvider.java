@@ -99,7 +99,7 @@ public class JwtAuthorizationProvider implements AuthenticationProvider {
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		String uid = StringUtils.defaultString(MapUtils.getString(claims, JwtClaims.UID), payload.getClientId());
+		String uid = StringUtils.defaultString(MapUtils.getString(claims, JwtClaims.UID), payload.getSubject());
 		
 		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
