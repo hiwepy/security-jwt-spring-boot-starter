@@ -88,7 +88,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		JwtPayload payload = getPayloadRepository().getPayload(jwtToken, checkExpiry);
 		
 		// 如果 checkPrincipal = true; 则需要验证 X-Uid 值是否有效即传递的值是否和Token中的值相同
-		if(this.isCheckPrincipal() && !StringUtils.equals(xuid, payload.getClientId())) {
+		if(this.isCheckPrincipal() && !StringUtils.equals(xuid, payload.getSubject())) {
 			throw new AuthenticationJwtInvalidException("Token Invalid");
 		}
 		
@@ -107,7 +107,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		
 		Map<String, Object> claims = payload.getClaims();
 		
-		String uid = StringUtils.defaultString(MapUtils.getString(claims, JwtClaims.UID), payload.getClientId());
+		String uid = StringUtils.defaultString(MapUtils.getString(claims, JwtClaims.UID), payload.getSubject());
 		
 		SecurityPrincipal principal = new SecurityPrincipal(uid, payload.getTokenId(), payload.isEnabled(),
 				payload.isAccountNonExpired(), payload.isCredentialsNonExpired(), payload.isAccountNonLocked(),
