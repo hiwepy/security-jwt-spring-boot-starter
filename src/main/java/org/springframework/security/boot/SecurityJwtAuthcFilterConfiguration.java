@@ -89,6 +89,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 				
 				SecurityBizProperties bizProperties,
    				SecurityJwtAuthcProperties authcProperties,
+   				SecuritySessionMgtProperties sessionMgtProperties,
    				
    				ObjectProvider<LocaleContextFilter> localeContextProvider,
    				ObjectProvider<AuthenticationProvider> authenticationProvider,
@@ -107,7 +108,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 				
    			) {
 		    
-			super(bizProperties, authcProperties, authenticationProvider.stream().collect(Collectors.toList()),
+			super(bizProperties, authcProperties, sessionMgtProperties, authenticationProvider.stream().collect(Collectors.toList()),
 					authenticationManagerProvider.getIfAvailable());
    			
    			this.authcProperties = authcProperties;

@@ -86,6 +86,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 		public JwtAuthzWebSecurityConfigurerAdapter(
 				
 				SecurityBizProperties bizProperties,
+				SecuritySessionMgtProperties sessionMgtProperties,
    				SecurityJwtAuthcProperties authcProperties,
    				SecurityJwtAuthzProperties authzProperties,
    				
@@ -106,7 +107,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 				
 			) {
 			
-			super(bizProperties, authcProperties, authenticationProvider.stream().collect(Collectors.toList()),
+			super(bizProperties, authcProperties, sessionMgtProperties, authenticationProvider.stream().collect(Collectors.toList()),
 					authenticationManagerProvider.getIfAvailable());
 			
    			this.bizProperties = bizProperties;
