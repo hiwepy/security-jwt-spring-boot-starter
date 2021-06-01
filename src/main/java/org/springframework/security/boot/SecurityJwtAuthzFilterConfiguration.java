@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.boot.biz.JsonInvalidSessionStrategy;
 import org.springframework.security.boot.biz.authentication.AuthenticatingFailureCounter;
 import org.springframework.security.boot.biz.authentication.AuthenticationListener;
 import org.springframework.security.boot.biz.authentication.nested.MatchedAuthenticationEntryPoint;
@@ -41,7 +40,6 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.savedrequest.RequestCache;
-import org.springframework.security.web.session.InvalidSessionStrategy;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.util.CollectionUtils;
 
@@ -76,12 +74,9 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    private final AuthenticationEntryPoint authenticationEntryPoint;
 	    private final AuthenticationSuccessHandler authenticationSuccessHandler;
 	    private final AuthenticationFailureHandler authenticationFailureHandler;
-	    private final InvalidSessionStrategy invalidSessionStrategy;
     	private final RequestCache requestCache;
     	private final RememberMeServices rememberMeServices;
-    	private final SessionRegistry sessionRegistry;
 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
-		private final SessionInformationExpiredStrategy sessionInformationExpiredStrategy;
 		
 		public JwtAuthzWebSecurityConfigurerAdapter(
 				
@@ -118,12 +113,9 @@ public class SecurityJwtAuthzFilterConfiguration {
    			this.authenticationEntryPoint = super.authenticationEntryPoint(authenticationEntryPointProvider.stream().collect(Collectors.toList()));
    			this.authenticationSuccessHandler = new JwtAuthorizationSuccessHandler();
    			this.authenticationFailureHandler = super.authenticationFailureHandler(authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
-   			this.invalidSessionStrategy = new JsonInvalidSessionStrategy();
    			this.requestCache = super.requestCache();
-   			this.rememberMeServices = super.rememberMeServices();
-   			this.sessionRegistry = super.sessionRegistry();
+   			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			this.sessionAuthenticationStrategy = super.sessionAuthenticationStrategy();
-   			this.sessionInformationExpiredStrategy = super.sessionInformationExpiredStrategy();
    			
 		}
 
@@ -136,7 +128,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 			 */
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 			
-			map.from(authcProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
+			map.from(getSessionMgtProperties().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
 			map.from(authenticationManagerBean()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authenticationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
@@ -170,27 +162,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    @Override
 		public void configure(HttpSecurity http) throws Exception {
 	    	
-	    	// Session 管理器配置参数
-   	    	SecuritySessionMgtProperties sessionMgt = authcProperties.getSessionMgt();
-   	    	
-   		    // Session 管理器配置
-   	    	http.sessionManagement()
-   	    		.enableSessionUrlRewriting(sessionMgt.isEnableSessionUrlRewriting())
-   	    		.invalidSessionStrategy(invalidSessionStrategy)
-   	    		.maximumSessions(sessionMgt.getMaximumSessions())
-   	    		.maxSessionsPreventsLogin(sessionMgt.isMaxSessionsPreventsLogin())
-   	    		.expiredSessionStrategy(sessionInformationExpiredStrategy)
-   				.sessionRegistry(sessionRegistry)
-   				.and()
-   	    		.sessionAuthenticationErrorUrl(sessionMgt.getFailureUrl())
-   	    		.sessionAuthenticationFailureHandler(authenticationFailureHandler)
-   	    		.sessionAuthenticationStrategy(sessionAuthenticationStrategy)
-   	    		.sessionCreationPolicy(sessionMgt.getCreationPolicy())
-   	        	// Request 缓存配置
-   	        	.and()
-   	    		.requestCache()
+   	    	http.requestCache()
    	        	.requestCache(requestCache)
-   	        	// 异常处理
    	        	.and()
    	        	.exceptionHandling()
    	        	.authenticationEntryPoint(authenticationEntryPoint)
