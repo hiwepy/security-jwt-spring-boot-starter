@@ -27,15 +27,15 @@ import com.alibaba.fastjson.JSONObject;
  * @author 		： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthenticationSuccessHandler {
-   
+
 	protected MessageSourceAccessor messages = SpringSecurityBizMessageSource.getAccessor();
 	private JwtPayloadRepository payloadRepository;
 	private boolean checkExpiry = false;
-	
+
 	public JwtMatchedAuthenticationSuccessHandler(JwtPayloadRepository payloadRepository) {
 		this.setPayloadRepository(payloadRepository);
 	}
-	
+
 	@Override
 	public boolean supports(Authentication authentication) {
 		return SubjectUtils.isAssignableFrom(authentication.getClass(), JwtAuthenticationToken.class);
@@ -44,7 +44,7 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
-    	
+
     	// 设置状态码和响应头
 		response.setStatus(HttpStatus.OK.value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -53,10 +53,10 @@ public class JwtMatchedAuthenticationSuccessHandler implements MatchedAuthentica
 		String message = messages.getMessage(AuthResponseCode.SC_AUTHC_SUCCESS.getMsgKey());
 		// 写出JSON
 		UserProfilePayload profilePayload = getPayloadRepository().getProfilePayload((AbstractAuthenticationToken) authentication, isCheckExpiry());
-		JSONObject.writeJSONString(response.getWriter(), AuthResponse.success(message, profilePayload));
-    	 
+		JSONObject.writeJSONString(response.getOutputStream(), AuthResponse.success(message, profilePayload));
+
     }
-    
+
 	public JwtPayloadRepository getPayloadRepository() {
 		return payloadRepository;
 	}
