@@ -16,7 +16,7 @@ security starter for spring boot
 <dependency>
 	<groupId>com.github.hiwepy</groupId>
 	<artifactId>security-jwt-spring-boot-starter</artifactId>
-	<version>1.0.9.RELEASE</version>
+	<version>2.0.0.RELEASE</version>
 </dependency>
 ```
 
