@@ -53,7 +53,7 @@
 		    <id>ossrh</id>
 			<name>Maven Central Staging Repository</name>
 		    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		  </repository>
+	  	</repository>
 	</distributionManagement>
 
 	<build>
