@@ -30,7 +30,6 @@ import org.springframework.security.boot.biz.userdetails.JwtPayloadRepository;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProcessingFilter;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationProvider;
 import org.springframework.security.boot.jwt.authentication.JwtAuthorizationSuccessHandler;
-import org.springframework.security.boot.utils.WebSecurityUtils;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
@@ -80,7 +79,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 		public JwtAuthzWebSecurityConfigurerAdapter(
 				
 				SecurityBizProperties bizProperties,
-				SecuritySessionMgtProperties sessionMgtProperties,
    				SecurityJwtAuthcProperties authcProperties,
    				SecurityJwtAuthzProperties authzProperties,
    				
@@ -99,17 +97,18 @@ public class SecurityJwtAuthzFilterConfiguration {
 				ObjectProvider<SessionAuthenticationStrategy> sessionAuthenticationStrategyProvider
 				
 			) {
-			
-			super(bizProperties, sessionMgtProperties, authenticationProvider.stream().collect(Collectors.toList()));
+
+			super(bizProperties, authcProperties, authenticationProvider.stream().collect(Collectors.toList()),
+					authenticationManagerProvider.getIfAvailable());
 			
    			this.bizProperties = bizProperties;
    			this.authcProperties = authcProperties;
    			this.authzProperties = authzProperties;
    			this.localeContextFilter = localeContextProvider.getIfAvailable();
    			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
-   			this.authenticationEntryPoint = WebSecurityUtils.authenticationEntryPoint(authcProperties, sessionMgtProperties, authenticationEntryPointProvider.stream().collect(Collectors.toList()));
+			this.authenticationEntryPoint = super.authenticationEntryPoint(authenticationEntryPointProvider.stream().collect(Collectors.toList()));
    			this.authenticationSuccessHandler = new JwtAuthorizationSuccessHandler();
-   			this.authenticationFailureHandler = WebSecurityUtils.authenticationFailureHandler(authcProperties, sessionMgtProperties, authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
+			this.authenticationFailureHandler = super.authenticationFailureHandler(authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
    			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
    			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
    			
@@ -124,7 +123,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 			 */
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 			
-			map.from(getSessionMgtProperties().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
+			map.from(authcProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
 			map.from(authenticationManagerBean()).to(authenticationFilter::setAuthenticationManager);
 			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);
 			map.from(authenticationFailureHandler).to(authenticationFilter::setAuthenticationFailureHandler);
