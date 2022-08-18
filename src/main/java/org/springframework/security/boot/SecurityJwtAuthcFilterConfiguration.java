@@ -63,7 +63,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@Configuration
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
-    @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 9)
 	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityFilterChainConfigurer {
 
 		private final SecurityJwtAuthcProperties authcProperties;
@@ -74,16 +73,12 @@ public class SecurityJwtAuthcFilterConfiguration {
 		private final AuthenticationFailureHandler authenticationFailureHandler;
 		private final AuthenticationManager authenticationManager;
 		private final CaptchaResolver captchaResolver;
-		private final InvalidSessionStrategy invalidSessionStrategy;
 		private final LocaleContextFilter localeContextFilter;
 		private final LogoutHandler logoutHandler;
 		private final LogoutSuccessHandler logoutSuccessHandler;
 		private final ObjectMapper objectMapper;
-		private final RequestCache requestCache;
 		private final RememberMeServices rememberMeServices;
-		private final SessionRegistry sessionRegistry;
 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
-		private final SessionInformationExpiredStrategy sessionInformationExpiredStrategy;
 
 
 		public JwtAuthcWebSecurityConfigurerAdapter(
@@ -92,8 +87,8 @@ public class SecurityJwtAuthcFilterConfiguration {
    				SecurityJwtAuthcProperties authcProperties,
 
 				ObjectProvider<AuthenticationManager> authenticationManagerProvider,
-				ObjectProvider<AuthenticationProvider> authenticationProvider,
 				ObjectProvider<AuthenticationListener> authenticationListenerProvider,
+				ObjectProvider<AuthenticationProvider> authenticationProvider,
 				ObjectProvider<AuthenticatingFailureCounter> authenticatingFailureCounterProvider,
 				ObjectProvider<CaptchaResolver> captchaResolverProvider,
 				ObjectProvider<MatchedAuthenticationEntryPoint> authenticationEntryPointProvider,
@@ -115,9 +110,9 @@ public class SecurityJwtAuthcFilterConfiguration {
    			this.authcProperties = authcProperties;
 
 			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
-			this.authenticatingFailureCounter = super.authenticatingFailureCounter();
-			this.authenticationEntryPoint = super.authenticationEntryPoint(authenticationEntryPointProvider.stream().collect(Collectors.toList()));
-			this.authenticationSuccessHandler = super.authenticationSuccessHandler(authenticationListeners, authenticationSuccessHandlerProvider.stream().collect(Collectors.toList()));
+			this.authenticatingFailureCounter = authenticatingFailureCounterProvider.getIfAvailable();
+			this.authenticationEntryPoint = super.authenticationEntryPoint(authcProperties.getPathPattern(), authenticationEntryPointProvider.stream().collect(Collectors.toList()));
+			this.authenticationSuccessHandler = super.authenticationSuccessHandler(authcProperties, authenticationListeners, authenticationSuccessHandlerProvider.stream().collect(Collectors.toList()));
 			this.authenticationFailureHandler = super.authenticationFailureHandler(authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
 			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
 			this.captchaResolver = captchaResolverProvider.getIfAvailable();
@@ -170,6 +165,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    }
 
 		@Bean
+		@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 9)
 		public SecurityFilterChain jwtAuthcSecurityFilterChain(HttpSecurity http) throws Exception {
 			// new DefaultSecurityFilterChain(new AntPathRequestMatcher(authcProperties.getPathPattern()), localeContextFilter, authenticationProcessingFilter());
 			http.antMatcher(authcProperties.getPathPattern())

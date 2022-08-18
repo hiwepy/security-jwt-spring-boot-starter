@@ -68,7 +68,6 @@ public class SecurityJwtAuthzFilterConfiguration {
     @Configuration
     @ConditionalOnProperty(prefix = SecurityJwtAuthzProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class, SecurityJwtAuthzProperties.class })
-    @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 80)
 	static class JwtAuthzWebSecurityConfigurerAdapter extends SecurityFilterChainConfigurer {
 
     	private final SecurityBizProperties bizProperties;
@@ -107,11 +106,11 @@ public class SecurityJwtAuthzFilterConfiguration {
    			this.authcProperties = authcProperties;
    			this.authzProperties = authzProperties;
 
+			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
 			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
 			this.authenticationEntryPoint = super.authenticationEntryPoint(authcProperties.getPathPattern(), authenticationEntryPointProvider.stream().collect(Collectors.toList()));
 			this.authenticationSuccessHandler = new JwtAuthorizationSuccessHandler();
 			this.authenticationFailureHandler = super.authenticationFailureHandler(authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
-			this.authenticationManager = authenticationManagerProvider.getIfAvailable();
 			this.localeContextFilter = localeContextProvider.getIfAvailable();
 			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
 			this.sessionAuthenticationStrategy = sessionAuthenticationStrategyProvider.getIfAvailable();
@@ -159,6 +158,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    }
 
 		@Bean
+		@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 80)
 		public SecurityFilterChain jwtAuthzSecurityFilterChain(HttpSecurity http) throws Exception {
 			// new DefaultSecurityFilterChain(new AntPathRequestMatcher(authcProperties.getPathPattern()), localeContextFilter, authenticationProcessingFilter());
 			http.antMatcher(authcProperties.getPathPattern())
