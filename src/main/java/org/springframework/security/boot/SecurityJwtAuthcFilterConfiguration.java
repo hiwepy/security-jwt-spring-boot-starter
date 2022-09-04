@@ -63,7 +63,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 	@Configuration
 	@ConditionalOnProperty(prefix = SecurityJwtAuthcProperties.PREFIX, value = "enabled", havingValue = "true")
 	@EnableConfigurationProperties({ SecurityBizProperties.class, SecurityJwtAuthcProperties.class })
-    @Order(SecurityProperties.DEFAULT_FILTER_ORDER + 9)
 	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityFilterChainConfigurer {
 
 		private final SecurityJwtAuthcProperties authcProperties;
@@ -73,17 +72,13 @@ public class SecurityJwtAuthcFilterConfiguration {
 		private final AuthenticationSuccessHandler authenticationSuccessHandler;
 		private final AuthenticationFailureHandler authenticationFailureHandler;
 		private final CaptchaResolver captchaResolver;
-		private final InvalidSessionStrategy invalidSessionStrategy;
 		private final LocaleContextFilter localeContextFilter;
 		private final LogoutHandler logoutHandler;
 		private final LogoutSuccessHandler logoutSuccessHandler;
 		private final ObjectMapper objectMapper;
 		private final RequestCache requestCache;
 		private final RememberMeServices rememberMeServices;
-		private final SessionRegistry sessionRegistry;
 		private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
-		private final SessionInformationExpiredStrategy sessionInformationExpiredStrategy;
-
 
 		public JwtAuthcWebSecurityConfigurerAdapter(
 
@@ -114,16 +109,13 @@ public class SecurityJwtAuthcFilterConfiguration {
 			this.authenticationSuccessHandler = super.authenticationSuccessHandler(authenticationListeners, authenticationSuccessHandlerProvider.stream().collect(Collectors.toList()));
 			this.authenticationFailureHandler = super.authenticationFailureHandler(authenticationListeners, authenticationFailureHandlerProvider.stream().collect(Collectors.toList()));
 			this.captchaResolver = captchaResolverProvider.getIfAvailable();
-			this.invalidSessionStrategy = super.invalidSessionStrategy();
 			this.localeContextFilter = localeContextProvider.getIfAvailable();
 			this.logoutHandler = super.logoutHandler(logoutHandlerProvider.stream().collect(Collectors.toList()));
 			this.logoutSuccessHandler = logoutSuccessHandlerProvider.getIfAvailable();
 			this.objectMapper = objectMapperProvider.getIfAvailable();
 			this.requestCache = super.requestCache();
 			this.rememberMeServices = rememberMeServicesProvider.getIfAvailable();
-			this.sessionRegistry = super.sessionRegistry();
 			this.sessionAuthenticationStrategy = super.sessionAuthenticationStrategy();
-			this.sessionInformationExpiredStrategy = super.sessionInformationExpiredStrategy();
 
 		}
 
@@ -167,6 +159,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	    }
 
 		@Bean
+		@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 9)
 		public SecurityFilterChain jwtAuthcSecurityFilterChain(HttpSecurity http) throws Exception {
 			// new DefaultSecurityFilterChain(new AntPathRequestMatcher(authcProperties.getPathPattern()), localeContextFilter, authenticationProcessingFilter());
 			http.antMatcher(authcProperties.getPathPattern())
@@ -182,10 +175,6 @@ public class SecurityJwtAuthcFilterConfiguration {
 					.headers(this.headersCustomizer(authcProperties.getHeaders()))
 					// Request 缓存配置
 					.requestCache((request) -> request.requestCache(requestCache))
-					// Session 管理器配置参数
-					.sessionManagement(this.sessionManagementCustomizer(authcProperties.getSessionMgt(), authcProperties.getLogout(),
-							invalidSessionStrategy, sessionRegistry, sessionInformationExpiredStrategy,
-							authenticationFailureHandler, sessionAuthenticationStrategy))
 					// Session 注销配置
 					.logout(this.logoutCustomizer(authcProperties.getLogout(), logoutHandler, logoutSuccessHandler))
 					// 禁用 Http Basic

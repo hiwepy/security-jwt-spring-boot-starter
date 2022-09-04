@@ -38,7 +38,7 @@ import lombok.ToString;
 public class SecurityJwtAuthzProperties {
 
 	public static final String PREFIX = "spring.security.jwt.authz";
-	
+
 	/** Whether Enable JWT Authorization. */
 	private boolean enabled = false;
 	private boolean checkExpiry = false;
@@ -46,7 +46,7 @@ public class SecurityJwtAuthzProperties {
 	/** Authorization Path Pattern */
 	private String pathPattern = "/**";
 	private String[] ignorePatterns = new String[] {"/login/jwt"};
-	
+
 	/**
 	 * Specifies the name of the header on where to find the token (i.e. X-Authorization).
 	 */
@@ -55,19 +55,10 @@ public class SecurityJwtAuthzProperties {
 	private String authorizationCookieName = JwtAuthorizationProcessingFilter.AUTHORIZATION_PARAM;
 	/**
 	 * Indicates if the filter chain should be continued prior to delegation to
-	 * {@link #successfulAuthentication(HttpServletRequest, HttpServletResponse, FilterChain, Authentication)}
+	 * {@link JwtAuthorizationProcessingFilter#successfulAuthentication(HttpServletRequest, HttpServletResponse, FilterChain, Authentication)}
 	 * , which may be useful in certain environment (such as Tapestry applications).
 	 * Defaults to <code>false</code>.
 	 */
 	private boolean continueChainBeforeSuccessfulAuthentication = true;
-
-	@NestedConfigurationProperty
-	private SecurityHeadersProperties headers = new SecurityHeadersProperties();
-
-	@NestedConfigurationProperty
-	private SecurityHeaderCorsProperties cros = new SecurityHeaderCorsProperties();
-	
-	@NestedConfigurationProperty
-	private SecurityHeaderCsrfProperties csrf = new SecurityHeaderCsrfProperties();
 
 }

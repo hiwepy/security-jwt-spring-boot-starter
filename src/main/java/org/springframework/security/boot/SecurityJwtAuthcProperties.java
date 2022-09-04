@@ -38,20 +38,18 @@ public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 	/** Whether Enable JWT Authentication. */
 	private boolean enabled = false;
 
-	/** 
-	 * the username parameter name. Defaults to "username". 
+	/**
+	 * the username parameter name. Defaults to "username".
 	 */
 	private String usernameParameter = UsernamePasswordAuthenticationFilter.SPRING_SECURITY_FORM_USERNAME_KEY;
-	/** 
-	 * the password parameter name. Defaults to "password". 
+	/**
+	 * the password parameter name. Defaults to "password".
 	 */
 	private String passwordParameter = UsernamePasswordAuthenticationFilter.SPRING_SECURITY_FORM_PASSWORD_KEY;
 
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
 	@NestedConfigurationProperty
-	private SecurityHeaderCsrfProperties csrf = new SecurityHeaderCsrfProperties();
-	@NestedConfigurationProperty
 	private SecurityLogoutProperties logout = new SecurityLogoutProperties();
-	
+
 }
