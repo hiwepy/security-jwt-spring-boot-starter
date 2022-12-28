@@ -66,6 +66,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 	static class JwtAuthcWebSecurityConfigurerAdapter extends SecurityFilterChainConfigurer {
 
 		private final SecurityJwtAuthcProperties authcProperties;
+		private final SecurityBizProperties bizProperties;
 
 		private final AuthenticatingFailureCounter authenticatingFailureCounter;
 		private final AuthenticationEntryPoint authenticationEntryPoint;
@@ -108,6 +109,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 			super(bizProperties, redirectStrategyProvider.getIfAvailable(), requestCacheProvider.getIfAvailable());
 
    			this.authcProperties = authcProperties;
+			this.bizProperties = bizProperties;
 
 			List<AuthenticationListener> authenticationListeners = authenticationListenerProvider.stream().collect(Collectors.toList());
 			this.authenticatingFailureCounter = authenticatingFailureCounterProvider.getIfAvailable();
@@ -134,7 +136,7 @@ public class SecurityJwtAuthcFilterConfiguration {
 			 */
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 
-			map.from(authcProperties.getSessionMgt().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
+			map.from(bizProperties.getSession().isAllowSessionCreation()).to(authenticationFilter::setAllowSessionCreation);
 
 			map.from(authenticationManager).to(authenticationFilter::setAuthenticationManager);
 			map.from(authenticationSuccessHandler).to(authenticationFilter::setAuthenticationSuccessHandler);

@@ -49,7 +49,5 @@ public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
-	@NestedConfigurationProperty
-	private SecurityHeaderCsrfProperties csrf = new SecurityHeaderCsrfProperties();
-	
+
 }
