@@ -17,10 +17,7 @@ package org.springframework.security.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.security.boot.biz.property.SecurityAuthcProperties;
-import org.springframework.security.boot.biz.property.SecurityCaptchaProperties;
-import org.springframework.security.boot.biz.property.SecurityHeaderCsrfProperties;
-import org.springframework.security.boot.biz.property.SecurityLogoutProperties;
+import org.springframework.security.boot.biz.property.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import lombok.Getter;
@@ -49,5 +46,7 @@ public class SecurityJwtAuthcProperties extends SecurityAuthcProperties {
 
 	@NestedConfigurationProperty
 	private SecurityCaptchaProperties captcha = new SecurityCaptchaProperties();
+	@NestedConfigurationProperty
+	private SecurityFailureRetryProperties retry = new SecurityFailureRetryProperties();
 
 }
