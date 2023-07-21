@@ -28,6 +28,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -48,6 +50,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * 
  * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
+@Slf4j
 public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFilter {
 	
 	/**
@@ -179,24 +182,33 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 	protected void setDetails(HttpServletRequest request, AbstractAuthenticationToken authRequest) {
 		authRequest.setDetails(authenticationDetailsSource.buildDetails(request));
 	}
-	
-	protected String obtainToken(HttpServletRequest request) {
 
-		// 从header中获取token
+	protected String obtainToken(HttpServletRequest request) {
+		//	从header中获取token
 		String token = request.getHeader(getAuthorizationHeaderName());
-		// 如果header中不存在token，则从参数中获取token
-		if (StringUtils.isEmpty(token)) {
-			return request.getParameter(getAuthorizationParamName());
+		if(!StringUtils.isEmpty(token)){
+			log.info("obtain token from header : {}", token);
 		}
+		//	如果header中不存在token，则从参数中获取token
+		if (StringUtils.isEmpty(token)) {
+			token = request.getParameter(getAuthorizationParamName());
+			if(!StringUtils.isEmpty(token)){
+				log.info("obtain token from param : {}", token);
+			}
+		}
+		//	从 cookie 获取 token
 		if (StringUtils.isEmpty(token)) {
 			// 从 cookie 获取 token
 			Cookie[] cookies = request.getCookies();
-			if (null == cookies || cookies.length == 0) {
+			if (ArrayUtils.isEmpty(cookies)) {
 				return null;
 			}
 			for (Cookie cookie : cookies) {
 				if (cookie.getName().equals(getAuthorizationCookieName())) {
 					token = cookie.getValue();
+					if(!StringUtils.isEmpty(token)){
+						log.info("obtain token from cookie : {}", token);
+					}
 					break;
 				}
 			}
