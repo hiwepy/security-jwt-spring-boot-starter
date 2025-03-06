@@ -47,12 +47,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Jwt授权 (authorization)过滤器
- * 
+ *
  * @author ： <a href="https://github.com/hiwepy">hiwepy</a>
  */
 @Slf4j
 public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFilter {
-	
+
 	/**
 	 * HTTP Authorization Param, equal to <code>token</code>
 	 */
@@ -61,11 +61,11 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 	 * HTTP Authorization header, equal to <code>X-Authorization</code>
 	 */
 	public static final String AUTHORIZATION_HEADER = "X-Authorization";
-	
+
 	private String authorizationHeaderName = AUTHORIZATION_HEADER;
 	private String authorizationParamName = AUTHORIZATION_PARAM;
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
-	
+
 	private List<RequestMatcher> ignoreRequestMatchers;
 	
 	private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
@@ -102,7 +102,7 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 
 		ServletRequestAttributes requestAttributes = new ServletRequestAttributes(request, response);
 		RequestContextHolder.setRequestAttributes(requestAttributes, true);
-		
+
 		if (!requiresAuthentication(request, response)) {
 			chain.doFilter(request, response);
 			return;
@@ -137,21 +137,21 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 
 			return;
 		}
-		
+
 		successfulAuthentication(request, response, chain, authResult);
 
 		// Authorization success
 		chain.doFilter(request, response);
-		
+
 	}
-	
+
 	@Override
 	public void setSessionAuthenticationStrategy(
 			SessionAuthenticationStrategy sessionStrategy) {
 		super.setSessionAuthenticationStrategy(sessionStrategy);
 		this.sessionStrategy = sessionStrategy;
 	}
-	
+
 	@Override
 	public Authentication doAttemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
@@ -163,22 +163,23 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 		}
 
 		token = token.trim();
-		
+
 		if(StringUtils.isBlank(token)) {
 			throw new AuthenticationJwtNotFoundException("JWT not provided");
 		}
-		
+
 		JwtAuthorizationToken authRequest = new JwtAuthorizationToken(this.obtainUid(request), token);
 		authRequest.setLongitude(this.obtainLongitude(request));
 		authRequest.setLatitude(this.obtainLatitude(request));
 		authRequest.setSign(this.obtainSign(request));
-		
+
 		// Allow subclasses to set the "details" property
 		setDetails(request, authRequest);
-		
+
 		return this.getAuthenticationManager().authenticate(authRequest);
 	}
 
+	@Override
 	protected void setDetails(HttpServletRequest request, AbstractAuthenticationToken authRequest) {
 		authRequest.setDetails(authenticationDetailsSource.buildDetails(request));
 	}
@@ -186,15 +187,11 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 	protected String obtainToken(HttpServletRequest request) {
 		//	从header中获取token
 		String token = request.getHeader(getAuthorizationHeaderName());
-		if(!StringUtils.isEmpty(token)){
-			log.info("obtain token from header : {}", token);
-		}
+		log.debug("obtain token from header : {}, token : {}", getAuthorizationHeaderName(), token);
 		//	如果header中不存在token，则从参数中获取token
 		if (StringUtils.isEmpty(token)) {
 			token = request.getParameter(getAuthorizationParamName());
-			if(!StringUtils.isEmpty(token)){
-				log.info("obtain token from param : {}", token);
-			}
+			log.debug("obtain token from param : {}, token : {}", getAuthorizationParamName(), token);
 		}
 		//	从 cookie 获取 token
 		if (StringUtils.isEmpty(token)) {
@@ -206,16 +203,14 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 			for (Cookie cookie : cookies) {
 				if (cookie.getName().equals(getAuthorizationCookieName())) {
 					token = cookie.getValue();
-					if(!StringUtils.isEmpty(token)){
-						log.info("obtain token from cookie : {}", token);
-					}
+					log.debug("obtain token from cookie : {}, token : {}", getAuthorizationCookieName(), token);
 					break;
 				}
 			}
 		}
 		return token;
 	}
-	
+
 	public void setIgnoreRequestMatcher(List<String> ignorePatterns) {
 		if(!CollectionUtils.isEmpty(ignorePatterns)) {
 			this.ignoreRequestMatchers = ignorePatterns.stream().map(pattern -> {
@@ -223,7 +218,7 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 			}).collect(Collectors.toList());
 		}
 	}
-	
+
 	public void setIgnoreRequestMatchers(RequestMatcher ...ignoreRequestMatchers) {
 		this.ignoreRequestMatchers = Arrays.asList(ignoreRequestMatchers);
 	}
