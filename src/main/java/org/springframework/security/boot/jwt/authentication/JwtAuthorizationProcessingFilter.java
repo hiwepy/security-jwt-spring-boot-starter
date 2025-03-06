@@ -28,6 +28,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,9 +64,15 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 	 */
 	public static final String AUTHORIZATION_HEADER = "X-Authorization";
 
-	private String authorizationHeaderName = AUTHORIZATION_HEADER;
-	private String authorizationParamName = AUTHORIZATION_PARAM;
-	private String authorizationCookieName = AUTHORIZATION_PARAM;
+	@Setter
+    @Getter
+    private String authorizationHeaderName = AUTHORIZATION_HEADER;
+	@Setter
+    @Getter
+    private String authorizationParamName = AUTHORIZATION_PARAM;
+	@Setter
+    @Getter
+    private String authorizationCookieName = AUTHORIZATION_PARAM;
 
 	private List<RequestMatcher> ignoreRequestMatchers;
 
@@ -221,30 +229,6 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 
 	public void setIgnoreRequestMatchers(RequestMatcher ...ignoreRequestMatchers) {
 		this.ignoreRequestMatchers = Arrays.asList(ignoreRequestMatchers);
-	}
-
-	public String getAuthorizationHeaderName() {
-		return authorizationHeaderName;
-	}
-
-	public void setAuthorizationHeaderName(String authorizationHeaderName) {
-		this.authorizationHeaderName = authorizationHeaderName;
-	}
-
-	public String getAuthorizationParamName() {
-		return authorizationParamName;
-	}
-
-	public void setAuthorizationParamName(String authorizationParamName) {
-		this.authorizationParamName = authorizationParamName;
-	}
-
-	public String getAuthorizationCookieName() {
-		return authorizationCookieName;
-	}
-
-	public void setAuthorizationCookieName(String authorizationCookieName) {
-		this.authorizationCookieName = authorizationCookieName;
 	}
 
 }
