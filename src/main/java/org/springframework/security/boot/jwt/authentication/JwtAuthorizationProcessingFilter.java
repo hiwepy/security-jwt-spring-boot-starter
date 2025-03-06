@@ -67,13 +67,13 @@ public class JwtAuthorizationProcessingFilter extends AuthenticationProcessingFi
 	private String authorizationCookieName = AUTHORIZATION_PARAM;
 
 	private List<RequestMatcher> ignoreRequestMatchers;
-	
+
 	private SessionAuthenticationStrategy sessionStrategy = new NullAuthenticatedSessionStrategy();
-	
+
 	public JwtAuthorizationProcessingFilter() {
 		super(new AntPathRequestMatcher("/**"));
 	}
-	
+
 	public JwtAuthorizationProcessingFilter(List<String> ignorePatterns) {
 		super(new AntPathRequestMatcher("/**"));
 		this.setIgnoreRequestMatcher(ignorePatterns);
