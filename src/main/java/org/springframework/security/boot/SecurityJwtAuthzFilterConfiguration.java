@@ -67,7 +67,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 	static class JwtAuthzWebSecurityCustomizerAdapter extends WebSecurityCustomizerAdapter {
 
     	private final SecurityBizProperties bizProperties;
-    	private final SecurityJwtAuthcProperties authcProperties;
     	private final SecurityJwtAuthzProperties authzProperties;
 
 		private final AccessDeniedHandler accessDeniedHandler;
@@ -102,7 +101,6 @@ public class SecurityJwtAuthzFilterConfiguration {
 			super(bizProperties, sessionMgtProperties, authenticationProvider.stream().collect(Collectors.toList()));
 			
    			this.bizProperties = bizProperties;
-   			this.authcProperties = authcProperties;
    			this.authzProperties = authzProperties;
 
 			this.accessDeniedHandler = new CompositeAccessDeniedHandler(accessDeniedHandlerProvider.stream().collect(Collectors.toList()));
@@ -150,7 +148,7 @@ public class SecurityJwtAuthzFilterConfiguration {
    				}).collect(Collectors.toList());
    			}
    			// 登录地址不拦截 
-   			ignorePatterns.add(authcProperties.getPathPattern());
+   			ignorePatterns.add(authzProperties.getPathPattern());
 			authenticationFilter.setIgnoreRequestMatcher(ignorePatterns);
 			
 	        return authenticationFilter;
@@ -160,19 +158,19 @@ public class SecurityJwtAuthzFilterConfiguration {
 		@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 80)
 		public SecurityFilterChain jwtAuthzSecurityFilterChain(HttpSecurity http) throws Exception {
 
-			http.securityMatcher(authcProperties.getPathPattern())
+			http.securityMatcher(authzProperties.getPathPattern())
 					.exceptionHandling(configurer -> {
 						configurer.authenticationEntryPoint(authenticationEntryPoint)
 								.accessDeniedHandler(accessDeniedHandler)
-								.accessDeniedPage(authcProperties.getAccessDeniedUrl());
+								.accessDeniedPage(authzProperties.getAccessDeniedUrl());
 					});
 			http.httpBasic(AbstractHttpConfigurer::disable);
 			http.addFilterBefore(localeContextFilter, UsernamePasswordAuthenticationFilter.class)
 					.addFilterBefore(authenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 
-			super.configure(http, authcProperties.getCors());
-			super.configure(http, authcProperties.getCsrf());
-			super.configure(http, authcProperties.getHeaders());
+			super.configure(http, authzProperties.getCros());
+			super.configure(http, authzProperties.getCsrf());
+			super.configure(http, authzProperties.getHeaders());
 			super.configure(http);
 
 			return http.build();

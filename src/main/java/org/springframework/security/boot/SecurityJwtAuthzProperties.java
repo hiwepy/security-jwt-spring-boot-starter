@@ -45,6 +45,10 @@ public class SecurityJwtAuthzProperties {
 	/** Authorization Path Pattern */
 	private String pathPattern = "/**";
 	private String[] ignorePatterns = new String[] {"/login/jwt"};
+	/**
+	 * 未授权页面：无权限时的跳转路径
+	 */
+	private String accessDeniedUrl = "/errors/401";
 	
 	/**
 	 * Specifies the name of the header on where to find the token (i.e. X-Authorization).
