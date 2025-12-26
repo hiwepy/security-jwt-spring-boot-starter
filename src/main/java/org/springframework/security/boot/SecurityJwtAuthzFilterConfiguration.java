@@ -67,7 +67,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 	static class JwtAuthzWebSecurityCustomizerAdapter extends WebSecurityCustomizerAdapter {
 
     	private final SecurityBizProperties bizProperties;
-    	private final SecurityJwtAuthzProperties authzProperties;
+    	private final SecurityJwtAuthcProperties authcProperties;
+		private final SecurityJwtAuthzProperties authzProperties;
 
 		private final AccessDeniedHandler accessDeniedHandler;
     	private final LocaleContextFilter localeContextFilter;
@@ -101,7 +102,8 @@ public class SecurityJwtAuthzFilterConfiguration {
 			super(bizProperties, sessionMgtProperties, authenticationProvider.stream().collect(Collectors.toList()));
 			
    			this.bizProperties = bizProperties;
-   			this.authzProperties = authzProperties;
+   			this.authcProperties = authcProperties;
+			this.authzProperties = authzProperties;
 
 			this.accessDeniedHandler = new CompositeAccessDeniedHandler(accessDeniedHandlerProvider.stream().collect(Collectors.toList()));
    			this.localeContextFilter = localeContextProvider.getIfAvailable();
@@ -118,7 +120,7 @@ public class SecurityJwtAuthzFilterConfiguration {
 	    	
 	    	JwtAuthorizationProcessingFilter authenticationFilter = new JwtAuthorizationProcessingFilter();
 			
-	    	/**
+	    	/*
 			 * 批量设置参数
 			 */
 			PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
@@ -139,16 +141,14 @@ public class SecurityJwtAuthzFilterConfiguration {
 			List<Entry<String, String>> noneEntries = bizProperties.getFilterChainDefinitionMap().entrySet().stream()
 					.filter(predicate -> {
 						return "anon".equalsIgnoreCase(predicate.getValue());
-					}).collect(Collectors.toList());
+					}).toList();
    			
    			List<String> ignorePatterns = new ArrayList<String>();
    			if (!CollectionUtils.isEmpty(noneEntries)) {
-   				ignorePatterns = noneEntries.stream().map(mapper -> {
-   					return mapper.getKey();
-   				}).collect(Collectors.toList());
+   				ignorePatterns = noneEntries.stream().map(Entry::getKey).collect(Collectors.toList());
    			}
    			// 登录地址不拦截 
-   			ignorePatterns.add(authzProperties.getPathPattern());
+   			ignorePatterns.add(authcProperties.getPathPattern());
 			authenticationFilter.setIgnoreRequestMatcher(ignorePatterns);
 			
 	        return authenticationFilter;
