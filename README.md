@@ -14,7 +14,7 @@ security starter for spring boot
 
 ``` xml
 <dependency>
-	<groupId>com.github.hiwepy</groupId>
+	<groupId>io.github.hiwepy</groupId>
 	<artifactId>security-jwt-spring-boot-starter</artifactId>
 	<version>1.0.9.RELEASE</version>
 </dependency>
