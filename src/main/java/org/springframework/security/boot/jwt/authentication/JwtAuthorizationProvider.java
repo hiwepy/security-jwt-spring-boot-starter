@@ -23,8 +23,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsChecker;
 import org.springframework.util.Assert;
 
-import com.github.hiwepy.jwt.JwtClaims;
-import com.github.hiwepy.jwt.JwtPayload;
+import io.github.hiwepy.jwt.JwtClaims;
+import io.github.hiwepy.jwt.JwtPayload;
 
 /**
  * 
