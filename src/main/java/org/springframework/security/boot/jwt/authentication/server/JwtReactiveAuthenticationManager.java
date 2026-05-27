@@ -15,8 +15,8 @@
  */
 package org.springframework.security.boot.jwt.authentication.server;
 
-import com.github.hiwepy.jwt.JwtClaims;
-import com.github.hiwepy.jwt.JwtPayload;
+import io.github.hiwepy.jwt.JwtClaims;
+import io.github.hiwepy.jwt.JwtPayload;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
